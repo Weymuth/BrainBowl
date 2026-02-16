@@ -197,6 +197,11 @@ const C = {
 const TYPE_COLORS = { regular:"#6366f1", spelling:"#ec4899", face_off:"#f59e0b", pop_up:"#06b6d4", all_play:"#10b981", wager:"#8b5cf6", minute_quiz:"#ef4444", order:"#f97316", estimation:"#14b8a6", this_or_that:"#e879f9" };
 const TYPE_LABELS = { regular:"REGULAR", spelling:"SPELLING", face_off:"FACE OFF", pop_up:"POP UP", all_play:"ALL PLAY", wager:"WAGER", minute_quiz:"MINUTE QUIZ", order:"PUT IN ORDER", estimation:"ESTIMATION", this_or_that:"THIS OR THAT" };
 
+// Default time limits in seconds per question type (0 = no timer)
+// Individual questions can override with a timeLimit field
+const DEFAULT_TIMERS = { regular:15, spelling:30, face_off:0, pop_up:30, all_play:30, wager:45, minute_quiz:60, order:45, estimation:30, this_or_that:15 };
+function getTimeLimit(q) { return q.timeLimit !== undefined ? q.timeLimit : (DEFAULT_TIMERS[q.type] || 0); }
+
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  🖼️ TEAM LOGOS (base64 embedded)                           ║
 // ╚══════════════════════════════════════════════════════════════╝
@@ -1204,8 +1209,15 @@ function HostView({ state }) {
         {(state.gamePhase === "title" || state.gamePhase.startsWith("intro")) && (
           <div style={{ textAlign:"center" }}>
             <div style={{ fontFamily:"'Bebas Neue'", fontSize:"48px", letterSpacing:"6px" }}>BRAIN BOWL</div>
-            <div style={{ opacity:0.4, marginTop:"4px" }}>
+            <div style={{ opacity:0.4, marginTop:"4px", marginBottom:"20px" }}>
               {state.gamePhase === "title" ? "Ready to start" : state.gamePhase === "intro_irving" ? "Introducing Irving..." : "Introducing Marshall..."}
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:"10px", maxWidth:"400px", margin:"0 auto" }}>
+              {state.gamePhase === "title" && ctrl("🔴 Introduce Irving", C.irvRed, () => updateGame({ gamePhase:"intro_irving" }))}
+              {state.gamePhase === "title" && ctrl("🔵 Introduce Marshall", C.marBlue, () => updateGame({ gamePhase:"intro_marshall" }))}
+              {state.gamePhase === "intro_irving" && ctrl("🔵 Introduce Marshall", C.marBlue, () => updateGame({ gamePhase:"intro_marshall" }))}
+              {state.gamePhase === "intro_marshall" && ctrl("🔴 Introduce Irving", C.irvRed, () => updateGame({ gamePhase:"intro_irving" }))}
+              {ctrl("▶ Start Game", C.green, () => updateGame({ gamePhase:"playing", questionPhase:"number", currentQuestion:0, scores:{irving:0,marshall:0}, playerStats:{} }))}
             </div>
           </div>
         )}
@@ -1267,7 +1279,10 @@ function HostView({ state }) {
             )}
 
             <div style={{ display:"flex", gap:"8px" }}>
-              {phase === "number" && ctrl("Show Question →", "#6366f1", () => updateGame({ questionPhase:"question" }))}
+              {phase === "number" && ctrl("Show Question →", "#6366f1", () => {
+                const tl = getTimeLimit(q);
+                updateGame({ questionPhase:"question", timerEnd: tl > 0 ? Date.now() + tl * 1000 : 0 });
+              })}
               {phase === "question" && q.type !== "minute_quiz" && ctrl("Reveal Answer →", C.green, () => updateGame({ questionPhase:"answer" }))}
               {phase === "answer" && ctrl("Next Question →", "#6366f1", () => {
                 const next = state.currentQuestion + 1;
@@ -1290,7 +1305,11 @@ function HostView({ state }) {
         {state.gamePhase === "halftime" && (
           <div style={{ textAlign:"center" }}>
             <div style={{ fontFamily:"'Bebas Neue'", fontSize:"48px" }}>HALFTIME</div>
-            <div style={{ fontSize:"20px", opacity:0.5, marginTop:"8px" }}>{state.scores.irving} — {state.scores.marshall}</div>
+            <div style={{ fontSize:"20px", opacity:0.5, marginTop:"8px", marginBottom:"20px" }}>{state.scores.irving} — {state.scores.marshall}</div>
+            {ctrl("▶ Resume Second Half", C.green, () => {
+              const next = HALFTIME_AFTER;
+              updateGame({ gamePhase:"playing", currentQuestion:next, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0, buzzerOpen:false, buzzerWinner:null, teamAnswerIrving:"", teamAnswerMarshall:"", wagerLockedIrving:false, wagerLockedMarshall:false, estimateIrving:"", estimateMarshall:"", estimateLockedIrving:false, estimateLockedMarshall:false, wrongTeam:null, countdownValue:0 });
+            })}
           </div>
         )}
 
@@ -1298,9 +1317,19 @@ function HostView({ state }) {
           <div style={{ textAlign:"center" }}>
             <div style={{ fontFamily:"'Bebas Neue'", fontSize:"48px" }}>GAME OVER</div>
             <div style={{ fontSize:"32px", fontFamily:"'Bebas Neue'", marginTop:"8px", opacity:0.6 }}>{state.scores.irving} — {state.scores.marshall}</div>
+            <div style={{ marginTop:"24px" }}>
+              {ctrl("🔄 Reset Game", "#6366f1", () => { if (confirm("Reset the entire game? This clears all scores.")) setGame(DEFAULT_STATE); })}
+            </div>
           </div>
         )}
       </div>
+      {/* Always-visible reset at bottom */}
+      {state.gamePhase !== "title" && (
+        <div style={{ padding:"8px 28px", borderTop:`1px solid ${C.border}`, textAlign:"center" }}>
+          <span onClick={() => { if (confirm("Reset the entire game? This clears all scores.")) setGame(DEFAULT_STATE); }}
+            style={{ fontSize:"12px", opacity:0.3, cursor:"pointer" }}>🔄 Reset Game</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -1788,24 +1817,17 @@ function ScorekeeperView({ state }) {
               {sm("JV", state.round==="jv" ? "#fff2" : "#1a1a2e", () => updateGame({ round:"jv" }), { border: state.round==="jv" ? "1px solid #fff4" : "1px solid #222", flex:1 })}
               {sm("VARSITY", state.round==="varsity" ? "#fff2" : "#1a1a2e", () => updateGame({ round:"varsity" }), { border: state.round==="varsity" ? "1px solid #fff4" : "1px solid #222", flex:1 })}
             </div>
-            {btn("🔴 Introduce Irving", C.irvRed, () => updateGame({ gamePhase:"intro_irving" }))}
-            {btn("🔵 Introduce Marshall", C.marBlue, () => updateGame({ gamePhase:"intro_marshall" }))}
-            {btn("▶ Start Game", C.green, () => updateGame({ gamePhase:"playing", questionPhase:"number", currentQuestion:0, scores:{irving:0,marshall:0}, playerStats:{} }))}
+            <div style={{ textAlign:"center", padding:"16px", opacity:0.4 }}>
+              <div style={{ fontSize:"14px" }}>Waiting for host to start game...</div>
+            </div>
           </>
         )}
 
-        {/* Intro phases */}
-        {state.gamePhase === "intro_irving" && (
-          <>
-            {btn("🔵 Introduce Marshall", C.marBlue, () => updateGame({ gamePhase:"intro_marshall" }))}
-            {btn("▶ Start Game", C.green, () => updateGame({ gamePhase:"playing", questionPhase:"number", currentQuestion:0, scores:{irving:0,marshall:0}, playerStats:{} }))}
-          </>
-        )}
-        {state.gamePhase === "intro_marshall" && (
-          <>
-            {btn("🔴 Introduce Irving", C.irvRed, () => updateGame({ gamePhase:"intro_irving" }))}
-            {btn("▶ Start Game", C.green, () => updateGame({ gamePhase:"playing", questionPhase:"number", currentQuestion:0, scores:{irving:0,marshall:0}, playerStats:{} }))}
-          </>
+        {/* Intro phases — host controls these */}
+        {state.gamePhase.startsWith("intro") && (
+          <div style={{ textAlign:"center", padding:"16px", opacity:0.4 }}>
+            <div style={{ fontSize:"14px" }}>{state.gamePhase === "intro_irving" ? "Introducing Irving..." : "Introducing Marshall..."}</div>
+          </div>
         )}
 
         {/* Halftime */}
@@ -1827,7 +1849,10 @@ function ScorekeeperView({ state }) {
           <>
             {/* Phase advancement */}
             <div style={{ display:"flex", gap:"8px" }}>
-              {phase === "number" && btn("Show Question", "#6366f1", () => updateGame({ questionPhase:"question" }))}
+              {phase === "number" && btn("Show Question", "#6366f1", () => {
+                const tl = getTimeLimit(q);
+                updateGame({ questionPhase:"question", timerEnd: tl > 0 ? Date.now() + tl * 1000 : 0 });
+              })}
               {phase === "question" && q.type !== "minute_quiz" && btn("Reveal Answer", C.green, () => updateGame({ questionPhase:"answer" }))}
               {phase === "answer" && (
                 <>
@@ -2091,7 +2116,6 @@ function ScorekeeperView({ state }) {
                 })}
               </div>
             )}
-            {btn("Reset Game", "#6366f1", () => setGame(DEFAULT_STATE))}
           </>
         )}
       </div>
@@ -2233,3 +2257,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
+
