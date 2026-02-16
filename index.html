@@ -655,6 +655,13 @@ function AudienceView({ state }) {
     prevScores.current = state.scores;
   }, [state.scores.irving, state.scores.marshall, audioReady]);
 
+  // Auto-end minute quiz when timer expires (check actual clock to avoid race condition)
+  useEffect(() => {
+    if (q?.type === "minute_quiz" && phase === "question" && state.timerEnd > 0 && Date.now() >= state.timerEnd) {
+      updateGame({ questionPhase:"answer", timerEnd:0 });
+    }
+  }, [remaining]);
+
   // Wrong answer sound
   useEffect(() => {
     if (!audioReady) return;
@@ -1295,9 +1302,35 @@ function HostView({ state }) {
               )}
             </div>
 
+            {/* Minute Quiz host controls */}
+            {q.type === "minute_quiz" && phase === "question" && (
+              <div style={{ display:"flex", gap:"8px" }}>
+                {ctrl("✓ Correct", "#059669", () => {
+                  const nextIdx = state.minuteQuizIndex + 1;
+                  if (nextIdx >= q.subQuestions.length) updateGame({ minuteQuizCorrect: state.minuteQuizCorrect+1, questionPhase:"answer", timerEnd:0 });
+                  else updateGame({ minuteQuizCorrect: state.minuteQuizCorrect+1, minuteQuizIndex: nextIdx });
+                })}
+                {ctrl("✗ Skip", "#dc2626", () => {
+                  const nextIdx = state.minuteQuizIndex + 1;
+                  if (nextIdx >= q.subQuestions.length) updateGame({ questionPhase:"answer", timerEnd:0 });
+                  else updateGame({ minuteQuizIndex: nextIdx });
+                })}
+                {ctrl("⏹ End Quiz", "#6366f1", () => updateGame({ questionPhase:"answer", timerEnd:0 }))}
+              </div>
+            )}
+
             <div style={{ display:"flex", gap:"8px" }}>
-              {ctrl(`Irving +${q.points || 1}`, C.irvRed, () => updateGame({ scores:{ ...state.scores, irving: state.scores.irving + (q.points||1) }}))}
-              {ctrl(`Marshall +${q.points || 1}`, C.marBlue, () => updateGame({ scores:{ ...state.scores, marshall: state.scores.marshall + (q.points||1) }}))}
+              {q.type === "minute_quiz" && phase === "answer" && state.minuteQuizCorrect > 0 ? (
+                <>
+                  {ctrl(`Award ${state.minuteQuizCorrect} pts → Irving`, C.irvRed, () => updateGame({ scores:{ ...state.scores, irving: state.scores.irving + state.minuteQuizCorrect }}))}
+                  {ctrl(`Award ${state.minuteQuizCorrect} pts → Marshall`, C.marBlue, () => updateGame({ scores:{ ...state.scores, marshall: state.scores.marshall + state.minuteQuizCorrect }}))}
+                </>
+              ) : (
+                <>
+                  {ctrl(`Irving +${q.points || 1}`, C.irvRed, () => updateGame({ scores:{ ...state.scores, irving: state.scores.irving + (q.points||1) }}))}
+                  {ctrl(`Marshall +${q.points || 1}`, C.marBlue, () => updateGame({ scores:{ ...state.scores, marshall: state.scores.marshall + (q.points||1) }}))}
+                </>
+              )}
             </div>
           </>
         )}
@@ -2033,14 +2066,15 @@ function ScorekeeperView({ state }) {
                     else updateGame({ minuteQuizIndex: nextIdx });
                   })}
                 </div>
-                {btn(
-                  remaining > 0 ? `⏸ Pause Timer (${remaining}s)` : "▶ Start 60s Timer",
-                  remaining > 0 ? "#dc2626" : C.green,
-                  () => {
-                    if (remaining > 0) updateGame({ timerEnd: 0, timerPaused: remaining * 1000 });
-                    else updateGame({ timerEnd: Date.now() + (state.timerPaused || 60000), timerPaused: 0 });
-                  }
-                )}
+                <div style={{ display:"flex", gap:"8px" }}>
+                  {btn(remaining > 0 ? `⏸ Pause (${remaining}s)` : state.timerPaused ? "▶ Resume" : "⏹ Timer ended", remaining > 0 ? "#dc2626" : state.timerPaused ? C.green : "#333",
+                    () => {
+                      if (remaining > 0) updateGame({ timerEnd: 0, timerPaused: remaining * 1000 });
+                      else if (state.timerPaused) updateGame({ timerEnd: Date.now() + state.timerPaused, timerPaused: 0 });
+                    }
+                  )}
+                  {btn("⏹ End Quiz", "#6366f1", () => updateGame({ questionPhase:"answer", timerEnd:0 }))}
+                </div>
                 {state.minuteQuizCorrect > 0 && (
                   <div style={{ display:"flex", gap:"8px" }}>
                     {btn(`Award ${state.minuteQuizCorrect} pts to ${state.minuteQuizTeam === "irving" ? "Irving" : "Marshall"}`,
@@ -2257,4 +2291,3 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
-
