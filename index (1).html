@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Brain Bowl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow-x: hidden; }
+  body { background: #07070c; color: #fff; font-family: 'Outfit', sans-serif; -webkit-font-smoothing: antialiased; }
+  button { font-family: 'Outfit', sans-serif; cursor: pointer; border: none; transition: all 0.15s ease; }
+  button:active { transform: scale(0.97); }
+  input { font-family: 'Outfit', sans-serif; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeInFast { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes scaleReveal { from { opacity: 0; transform: scale(0.7); } to { opacity: 1; transform: scale(1); } }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  @keyframes glowPulse { 0%,100% { box-shadow: 0 0 20px var(--glow-color, #fff3); } 50% { box-shadow: 0 0 40px var(--glow-color, #fff5), 0 0 80px var(--glow-color, #fff2); } }
+  @keyframes scorePop { 0% { transform: scale(1); } 30% { transform: scale(1.25); } 100% { transform: scale(1); } }
+  @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+  @keyframes timerUrgent { 0%,100% { color: #ef4444; text-shadow: 0 0 20px #ef444466; } 50% { color: #ff6b6b; text-shadow: 0 0 40px #ef444488; } }
+
+  .animate-in { animation: fadeIn 0.5s ease both; }
+  .animate-scale { animation: scaleReveal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  .animate-slide { animation: slideDown 0.3s ease both; }
+  .score-pop { animation: scorePop 0.4s ease; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
+<!-- React -->
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
+
+<script type="text/babel" data-type="module">
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  🔧 FIREBASE CONFIG — PASTE YOUR CONFIG BELOW              ║
+// ║  See SETUP.md for step-by-step instructions                ║
+// ╚══════════════════════════════════════════════════════════════╝
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBTs0VB8uP2-LDiCPalkTSWWQIUP8ZaUYY",
+  authDomain: "imbrainbowl.firebaseapp.com",
+  databaseURL: "https://imbrainbowl-default-rtdb.firebaseio.com",
+  projectId: "imbrainbowl",
+  storageBucket: "imbrainbowl.firebasestorage.app",
+  messagingSenderId: "727204657085",
+  appId: "1:727204657085:web:7136318a0cdf91a01a44d4"
+};
+
+// Initialize Firebase
+const app = initializeApp(FIREBASE_CONFIG);
+
+const IS_CONFIGURED = !FIREBASE_CONFIG.apiKey.includes("YOUR_");
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  📝 QUESTIONS — EDIT YOUR QUESTIONS HERE                    ║
+// ║  Each question needs: id, type, points, question, answer   ║
+// ║  Types: regular, spelling, face_off, pop_up,               ║
+// ║         all_play, wager, minute_quiz                        ║
+// ╚══════════════════════════════════════════════════════════════╝
+const QUESTIONS = [
+  { id:1, type:"regular", points:1, question:"Some sixty percent of the British newspaper market is devoted to what type of periodical written in a popular sensational style?", answer:"Tabloid" },
+  { id:2, type:"regular", points:1, question:"What American writer created the characters of Dean Moriarty and Sal Paradise?", answer:"Jack Kerouac" },
+  { id:3, type:"regular", points:1, question:"The Andaman Islands form one of the territories of what Asian country?", answer:"India" },
+  { id:4, type:"regular", points:1, question:"A thrombosis is a blood clot inside a blood vessel — if it breaks free and creates an obstruction it is now known as?", answer:"Embolus or Embolism" },
+  { id:5, type:"regular", points:1, question:"What US President held office when 12,000 air traffic controllers went on strike?", answer:"Ronald Reagan" },
+  { id:6, type:"spelling", points:1, question:"A mental disorder characterized by a feeling of being persecuted. Spell this word.", answer:"P-A-R-A-N-O-I-A" },
+  { id:7, type:"regular", points:1, question:"Name the author of the beloved Ramona Quimby book series for children.", answer:"Beverly Cleary" },
+  { id:8, type:"regular", points:1, question:"To the nearest DOLLAR, calculate a 15% tip on a bill of $59.17.", answer:"$9 (exact: $8.88)" },
+  { id:9, type:"regular", points:1, question:"Identify the Cuban dance in which participants form a line doing three steps forward followed by a kick.", answer:"Conga" },
+  { id:10, type:"face_off", points:1, theme:"Beverages — Name the City Where It Was Created",
+    subQuestions: [
+      { question:"Snapple", answer:"Brooklyn, New York" },
+      { question:"Mountain Dew", answer:"Knoxville, Tennessee" },
+      { question:"Coca-Cola", answer:"Atlanta, Georgia" },
+      { question:"Moxie", answer:"Lowell, Massachusetts" },
+      { question:"Dr. Pepper", answer:"Waco, Texas" },
+    ]
+  },
+  { id:11, type:"regular", points:1, question:"Motion Picture Companies make an abundance of RomComs. What does RomCom stand for?", answer:"Romantic Comedy" },
+  { id:12, type:"regular", points:1, question:"The prize money given to a winning horse in a race is called what?", answer:"The Purse" },
+  { id:13, type:"spelling", points:1, question:"Erratic or impulsive. Spell this word.", answer:"C-A-P-R-I-C-I-O-U-S" },
+  { id:14, type:"regular", points:1, question:"What sound uttered by a feathered biped is also a nickname for a person who pretends to have knowledge in medicine?", answer:"Quack" },
+  { id:15, type:"pop_up", points:4, question:"Name the four endocrine glands beginning with the letter P.",
+    parts:["Parathyroid","Pancreas","Pituitary","Pineal"], answer:"Parathyroid, Pancreas, Pituitary, Pineal"
+  },
+  { id:16, type:"regular", points:1, question:"A network that connects computers over a large area such as a city or country is given what three-letter abbreviation?", answer:"WAN (Wide Area Network)" },
+  { id:17, type:"regular", points:1, question:"The assassination of JFK and the illnesses of Presidents Eisenhower and Johnson prompted the passage of what constitutional amendment?", answer:"25th Amendment" },
+  { id:18, type:"regular", points:1, question:"What term meaning 'small time, inferior or second-rate' was originally applied to small town minor league baseball teams?", answer:"Bush League" },
+  { id:19, type:"wager", points:0, question:"What alkali metal — the most electropositive element — is used in photoelectric cells?", answer:"Cesium" },
+  { id:20, type:"regular", points:1, question:"The first Black man elected to the U.S. Senate filled the same seat previously held by Jefferson Davis. What state did Davis represent?", answer:"Mississippi" },
+  { id:21, type:"regular", points:1, question:"What kind of clause makes a complete grammatical statement that can stand alone?", answer:"Independent Clause" },
+  { id:22, type:"face_off", points:1, theme:"Two-Letter Words — Give the Two-Letter Answer",
+    subQuestions: [
+      { question:"The part of Freudian psychology relating to impulse control", answer:"ID" },
+      { question:"First person possessive pronoun", answer:"MY" },
+      { question:"A horned beast of burden", answer:"OX" },
+      { question:"The first note of a diatonic scale", answer:"DO" },
+      { question:"Abdominal muscle", answer:"AB" },
+    ]
+  },
+  { id:23, type:"all_play", points:1, question:"How many continents have names that do NOT include the letter A?", answer:"One (Europe)" },
+  { id:24, type:"regular", points:1, question:"What did the 'ME' in Windows ME stand for?", answer:"Millennium Edition" },
+  { id:25, type:"regular", points:1, question:"In 1983, Sally Ride became the first American woman in space aboard what space shuttle?", answer:"Challenger" },
+  { id:26, type:"regular", points:1, question:"What famous architect designed Fallingwater in Mill Run, Pennsylvania?", answer:"Frank Lloyd Wright" },
+  { id:27, type:"spelling", points:1, question:"Placing two things close together for contrast. Spell this word.", answer:"J-U-X-T-A-P-O-S-I-T-I-O-N" },
+  { id:28, type:"regular", points:1, question:"What is the name of the fictional town where Stranger Things takes place?", answer:"Hawkins, Indiana" },
+  { id:29, type:"pop_up", points:3, question:"The circle is one of the four non-degenerate conic sections. Identify the other three.",
+    parts:["Parabola","Hyperbola","Ellipse"], answer:"Parabola, Hyperbola, Ellipse"
+  },
+  { id:30, type:"regular", points:1, question:"What is the only bird known to fly backward?", answer:"Hummingbird" },
+  { id:31, type:"wager", points:0, question:"What was the first battle of the American Civil War?", answer:"Battle of Fort Sumter" },
+  { id:32, type:"regular", points:1, question:"Who directed the movies Jaws and E.T.?", answer:"Steven Spielberg" },
+  { id:33, type:"regular", points:1, question:"What does GDP stand for in Economics?", answer:"Gross Domestic Product" },
+  { id:34, type:"all_play", points:1, question:"What is the only US state whose name can be typed using one row on a standard QWERTY keyboard?", answer:"Alaska" },
+  { id:35, type:"regular", points:1, question:"Which horror movie villain wears a mask based on an Edvard Munch painting?", answer:"Ghostface (Scream)" },
+  { id:36, type:"regular", points:1, question:"Who was the only US president to serve as Chief Justice of the Supreme Court after his presidency?", answer:"William Howard Taft" },
+  { id:37, type:"regular", points:1, question:"What is the chemical symbol for lead?", answer:"Pb" },
+  { id:38, type:"regular", points:1, question:"Who painted The Birth of Venus?", answer:"Sandro Botticelli" },
+  { id:39, type:"regular", points:1, question:"What is the second-highest mountain in the world?", answer:"K2" },
+  { id:40, type:"regular", points:1, question:"What novel features the character Holden Caulfield?", answer:"The Catcher in the Rye" },
+  { id:41, type:"minute_quiz", points:1, minuteQuizLabel:"Minute Quiz",
+    subQuestions: [
+      { question:"What is the capital of Canada?", answer:"Ottawa" },
+      { question:"Who wrote To Kill a Mockingbird?", answer:"Harper Lee" },
+      { question:"Which amendment abolished slavery?", answer:"13th Amendment" },
+      { question:"Who is the Greek god of war?", answer:"Ares" },
+      { question:"What is the national language of Brazil?", answer:"Portuguese" },
+      { question:"Who discovered penicillin?", answer:"Alexander Fleming" },
+      { question:"In what year did the US land on the moon?", answer:"1969" },
+      { question:"What is the SI unit of force?", answer:"Newton" },
+      { question:"What is the powerhouse of the cell?", answer:"Mitochondria" },
+      { question:"How many bones in the adult human body?", answer:"206" },
+      { question:"What is the smallest country in the world?", answer:"Vatican City" },
+      { question:"What is the opposite of nocturnal?", answer:"Diurnal" },
+      { question:"Who is the Father of the Constitution?", answer:"James Madison" },
+      { question:"What is a word that reads the same forward and backward?", answer:"Palindrome" },
+      { question:"What does HTTP stand for?", answer:"HyperText Transfer Protocol" },
+    ]
+  },
+];
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  CONSTANTS & THEME                                          ║
+// ╚══════════════════════════════════════════════════════════════╝
+const C = {
+  irvRed: "#DC2626", irvDark: "#991B1B", irvGlow: "#DC262644",
+  marBlue: "#2563EB", marDark: "#1E3A8A", marGlow: "#2563EB44",
+  bg: "#07070c", bgCard: "#0f0f18", bgHover: "#1a1a2e",
+  green: "#10b981", greenDark: "#065f46",
+  amber: "#f59e0b", cyan: "#06b6d4", orange: "#f97316",
+  red: "#ef4444", purple: "#a78bfa", pink: "#ec4899",
+  text: "#ffffff", textMuted: "#94a3b8", textDim: "#475569",
+  border: "#1e1e2e", borderLight: "#2a2a3e",
+};
+const TYPE_LABELS = { regular:"QUESTION", spelling:"✏️ SPELLING", face_off:"🤝 FACE OFF", pop_up:"📢 POP-UP", all_play:"⚡ ALL PLAY", wager:"💰 WAGER", minute_quiz:"⏱️ MINUTE QUIZ" };
+const TYPE_COLORS = { regular:C.textMuted, spelling:C.purple, face_off:C.amber, pop_up:C.green, all_play:C.cyan, wager:C.orange, minute_quiz:C.red };
+
+const DEFAULT_STATE = {
+  gamePhase: "title",
+  round: "jv",
+  currentQuestion: 0,
+  questionPhase: "number",
+  scores: { irving: 0, marshall: 0 },
+  timerEnd: 0,
+  timerPaused: 0,
+  faceOffIndex: 0,
+  minuteQuizIndex: 0,
+  minuteQuizCorrect: 0,
+  minuteQuizTeam: "irving",
+  popUpRevealed: 0,
+  wagerIrving: 0,
+  wagerMarshall: 0,
+};
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  FIREBASE INIT & STATE SYNC                                 ║
+// ╚══════════════════════════════════════════════════════════════╝
+let db = null;
+let gameRef = null;
+
+if (IS_CONFIGURED) {
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    gameRef = db.ref("brainbowl");
+  } catch (e) {
+    console.error("Firebase init failed:", e);
+  }
+}
+
+function useGameState() {
+  const [state, setState] = React.useState(DEFAULT_STATE);
+  const [connected, setConnected] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!gameRef) return;
+    gameRef.on("value", (snap) => {
+      if (snap.exists()) {
+        setState(prev => ({ ...DEFAULT_STATE, ...snap.val() }));
+      } else {
+        gameRef.set(DEFAULT_STATE);
+      }
+      setConnected(true);
+    });
+    // Monitor connection
+    const connRef = db.ref(".info/connected");
+    connRef.on("value", (snap) => setConnected(snap.val() === true));
+    return () => { gameRef.off(); connRef.off(); };
+  }, []);
+
+  return { state, connected };
+}
+
+function updateGame(updates) {
+  if (gameRef) gameRef.update(updates);
+}
+function setGame(state) {
+  if (gameRef) gameRef.set(state);
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  TIMER HOOK                                                 ║
+// ╚══════════════════════════════════════════════════════════════╝
+function useTimer(timerEnd) {
+  const [remaining, setRemaining] = React.useState(0);
+  React.useEffect(() => {
+    if (!timerEnd || timerEnd <= 0) { setRemaining(0); return; }
+    const tick = () => {
+      const r = Math.max(0, Math.ceil((timerEnd - Date.now()) / 1000));
+      setRemaining(r);
+    };
+    tick();
+    const id = setInterval(tick, 250);
+    return () => clearInterval(id);
+  }, [timerEnd]);
+  return remaining;
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  SHARED COMPONENTS                                          ║
+// ╚══════════════════════════════════════════════════════════════╝
+const { useState, useEffect, useRef, useCallback } = React;
+const e = React.createElement;
+
+function TypeBadge({ type, size = "sm", extra = "" }) {
+  const sz = size === "lg" ? { padding:"6px 22px", fontSize:"15px", letterSpacing:"3px" } : { padding:"3px 14px", fontSize:"11px", letterSpacing:"2px" };
+  return (
+    <span style={{ display:"inline-block", borderRadius:"20px", fontWeight:700, background:TYPE_COLORS[type]+"22", color:TYPE_COLORS[type], border:`1px solid ${TYPE_COLORS[type]}44`, ...sz }}>
+      {TYPE_LABELS[type]}{extra && ` ${extra}`}
+    </span>
+  );
+}
+
+function TimerDisplay({ timerEnd, size="lg", style:extraStyle={} }) {
+  const remaining = useTimer(timerEnd);
+  if (remaining <= 0) return null;
+  const urgent = remaining <= 10;
+  const sz = size === "lg" ? "64px" : size === "md" ? "42px" : "24px";
+  return (
+    <div style={{ fontFamily:"'Bebas Neue'", fontSize:sz, color: urgent ? C.red : C.textMuted, animation: urgent ? "timerUrgent 1s infinite" : "none", lineHeight:1, ...extraStyle }}>
+      {remaining}
+    </div>
+  );
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  🖥️  AUDIENCE VIEW — Big screen projector display           ║
+// ╚══════════════════════════════════════════════════════════════╝
+function AudienceView({ state }) {
+  const q = QUESTIONS[state.currentQuestion];
+  const phase = state.questionPhase;
+  const gp = state.gamePhase;
+  const prevScores = useRef({ ...state.scores });
+  const [flash, setFlash] = useState(null);
+  const remaining = useTimer(state.timerEnd);
+
+  useEffect(() => {
+    if (state.scores.irving !== prevScores.current.irving) { setFlash("irving"); setTimeout(() => setFlash(null), 800); }
+    if (state.scores.marshall !== prevScores.current.marshall) { setFlash("marshall"); setTimeout(() => setFlash(null), 800); }
+    prevScores.current = { ...state.scores };
+  }, [state.scores.irving, state.scores.marshall]);
+
+  const renderQuestion = () => {
+    if (!q) return null;
+    const subQ = q.type === "face_off" ? q.subQuestions?.[state.faceOffIndex] : q.type === "minute_quiz" ? q.subQuestions?.[state.minuteQuizIndex] : null;
+
+    // Question number splash
+    if (phase === "number") return (
+      <div key={`num-${state.currentQuestion}`} className="animate-scale" style={{ textAlign:"center" }}>
+        <TypeBadge type={q.type} size="lg" />
+        <div style={{ fontFamily:"'Bebas Neue'", fontSize:"min(200px, 25vw)", lineHeight:1, marginTop:"8px", opacity:0.9, textShadow:"0 0 80px #fff1" }}>
+          {state.currentQuestion + 1}
+        </div>
+        {q.type === "wager" && <div style={{ fontSize:"22px", opacity:0.5, marginTop:"8px", fontWeight:300 }}>Teams — place your wagers!</div>}
+        {q.type === "all_play" && <div style={{ fontSize:"22px", opacity:0.5, marginTop:"8px", fontWeight:300 }}>Both teams can buzz in!</div>}
+        {q.type === "face_off" && <div style={{ fontSize:"22px", opacity:0.5, marginTop:"8px", fontWeight:300 }}>1 vs 1 — {q.theme}</div>}
+        {q.type === "minute_quiz" && <div style={{ fontSize:"22px", opacity:0.5, marginTop:"8px", fontWeight:300 }}>60-Second Rapid Fire!</div>}
+        {q.type === "pop_up" && <div style={{ fontSize:"22px", opacity:0.5, marginTop:"8px", fontWeight:300 }}>Up to {q.points} points — other team can steal!</div>}
+      </div>
+    );
+
+    // Question display
+    if (phase === "question") {
+      if (q.type === "minute_quiz") return (
+        <div key={`mq-${state.minuteQuizIndex}`} className="animate-in" style={{ textAlign:"center", width:"100%", maxWidth:"900px" }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"32px" }}>
+            <TypeBadge type="minute_quiz" extra={`• ${state.minuteQuizIndex+1}/${q.subQuestions.length}`} />
+            <div style={{ fontFamily:"'Bebas Neue'", fontSize:"72px", lineHeight:1, color: remaining<=10 ? C.red : C.green, animation: remaining<=10 ? "timerUrgent 1s infinite" : "none" }}>
+              {remaining || "—"}
+            </div>
+          </div>
+          <div style={{ fontSize:"min(40px, 5vw)", fontWeight:700, lineHeight:1.3, textShadow:"0 2px 30px #0008" }}>
+            {subQ?.question}
+          </div>
+          <div style={{ marginTop:"20px", fontSize:"16px", opacity:0.4 }}>Correct so far: {state.minuteQuizCorrect}</div>
+        </div>
+      );
+
+      if (q.type === "face_off") return (
+        <div key={`fo-${state.faceOffIndex}`} className="animate-in" style={{ textAlign:"center", maxWidth:"900px" }}>
+          <TypeBadge type="face_off" extra={`• ${state.faceOffIndex+1}/${q.subQuestions.length}`} />
+          <div style={{ fontSize:"20px", opacity:0.5, fontWeight:300, margin:"16px 0 24px", letterSpacing:"1px" }}>{q.theme}</div>
+          <div style={{ fontSize:"min(48px, 6vw)", fontWeight:800, lineHeight:1.2, textShadow:"0 2px 30px #0008" }}>
+            {subQ?.question}
+          </div>
+        </div>
+      );
+
+      // Regular, spelling, wager, all_play, pop_up
+      return (
+        <div key={`q-${state.currentQuestion}`} className="animate-in" style={{ textAlign:"center", maxWidth:"900px" }}>
+          <TypeBadge type={q.type} extra={`• Q${state.currentQuestion+1}`} />
+          <div style={{ fontSize:"min(42px, 5vw)", fontWeight:700, lineHeight:1.3, marginTop:"24px", textShadow:"0 2px 30px #0008" }}>
+            {q.question}
+          </div>
+          {q.type === "pop_up" && state.popUpRevealed > 0 && (
+            <div style={{ marginTop:"28px", display:"flex", gap:"12px", justifyContent:"center", flexWrap:"wrap" }}>
+              {q.parts.slice(0, state.popUpRevealed).map((p, i) => (
+                <div key={i} className="animate-scale" style={{ background:C.green+"22", border:`1px solid ${C.green}66`, borderRadius:"10px", padding:"10px 24px", fontSize:"22px", fontWeight:700 }}>{p}</div>
+              ))}
+            </div>
+          )}
+          {remaining > 0 && <TimerDisplay timerEnd={state.timerEnd} style={{ marginTop:"32px" }} />}
+        </div>
+      );
+    }
+
+    // Answer reveal
+    if (phase === "answer") {
+      const answerText = q.type === "face_off" ? subQ?.answer : q.type === "minute_quiz" ? `${state.minuteQuizCorrect} correct out of ${state.minuteQuizIndex + 1}` : q.answer;
+      const answerColor = q.type === "face_off" ? C.amber : C.green;
+      return (
+        <div key={`a-${state.currentQuestion}-${state.faceOffIndex}`} className="animate-scale" style={{ textAlign:"center", maxWidth:"900px" }}>
+          <div style={{ fontSize:"16px", opacity:0.4, letterSpacing:"4px", fontWeight:600, marginBottom:"16px" }}>
+            {q.type === "minute_quiz" ? "TIME'S UP!" : "THE ANSWER IS"}
+          </div>
+          <div style={{ fontFamily:"'Bebas Neue'", fontSize:"min(72px, 9vw)", color:answerColor, textShadow:`0 0 50px ${answerColor}44`, lineHeight:1.2 }}>
+            {answerText}
+          </div>
+          {q.type === "face_off" && <div style={{ marginTop:"12px", fontSize:"18px", opacity:0.4 }}>{subQ?.question} • {state.faceOffIndex+1}/{q.subQuestions.length}</div>}
+          {q.type === "minute_quiz" && <div style={{ marginTop:"12px", fontSize:"18px", opacity:0.4 }}>
+            {state.minuteQuizTeam === "irving" ? "Irving" : "Marshall"}'s Minute Quiz
+          </div>}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, position:"relative", overflow:"hidden", display:"flex", flexDirection:"column" }}>
+      {/* Atmospheric background */}
+      <div style={{ position:"absolute", inset:0, opacity:0.12, background:`radial-gradient(ellipse at 15% 50%, ${C.irvRed}55 0%, transparent 55%), radial-gradient(ellipse at 85% 50%, ${C.marBlue}55 0%, transparent 55%)`, pointerEvents:"none" }} />
+      <div style={{ position:"absolute", inset:0, opacity:0.03, backgroundImage:"repeating-linear-gradient(0deg, transparent, transparent 3px, #fff1 3px, #fff1 4px)", pointerEvents:"none" }} />
+
+      {/* ─── Scoreboard Header ─── */}
+      <div style={{ position:"relative", zIndex:10, display:"flex", alignItems:"stretch", justifyContent:"center", padding:"12px 20px 0" }}>
+        {/* Irving */}
+        <div style={{
+          background:`linear-gradient(135deg, ${C.irvRed}, ${C.irvDark})`, borderRadius:"14px 0 0 14px",
+          padding:"10px 32px", display:"flex", alignItems:"center", gap:"20px", minWidth:"260px", justifyContent:"space-between",
+          boxShadow: flash==="irving" ? `0 0 40px ${C.irvRed}88` : `0 0 20px ${C.irvGlow}`,
+          border:`1px solid ${C.irvRed}66`, transition:"box-shadow 0.3s",
+        }}>
+          <div>
+            <div style={{ fontFamily:"'Bebas Neue'", fontSize:"22px", letterSpacing:"4px", lineHeight:1 }}>IRVING</div>
+            <div style={{ fontSize:"11px", opacity:0.6, letterSpacing:"2px" }}>RED TEAM</div>
+          </div>
+          <div key={state.scores.irving} className={flash==="irving" ? "score-pop" : ""} style={{ fontFamily:"'Bebas Neue'", fontSize:"60px", lineHeight:1, textShadow:"0 0 20px #fff3" }}>
+            {state.scores.irving}
+          </div>
+        </div>
+
+        {/* Center */}
+        <div style={{ background:"linear-gradient(180deg, #12121f, #0d0d18)", padding:"6px 20px", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", border:`1px solid ${C.border}`, zIndex:5, minWidth:"100px" }}>
+          <div style={{ fontFamily:"'Bebas Neue'", fontSize:"24px", letterSpacing:"5px", lineHeight:1 }}>BRAIN</div>
+          <div style={{ fontFamily:"'Bebas Neue'", fontSize:"16px", letterSpacing:"6px", opacity:0.5, lineHeight:1 }}>BOWL</div>
+        </div>
+
+        {/* Marshall */}
+        <div style={{
+          background:`linear-gradient(135deg, ${C.marDark}, ${C.marBlue})`, borderRadius:"0 14px 14px 0",
+          padding:"10px 32px", display:"flex", alignItems:"center", gap:"20px", minWidth:"260px", justifyContent:"space-between",
+          boxShadow: flash==="marshall" ? `0 0 40px ${C.marBlue}88` : `0 0 20px ${C.marGlow}`,
+          border:`1px solid ${C.marBlue}66`, transition:"box-shadow 0.3s",
+        }}>
+          <div key={state.scores.marshall} className={flash==="marshall" ? "score-pop" : ""} style={{ fontFamily:"'Bebas Neue'", fontSize:"60px", lineHeight:1, textShadow:"0 0 20px #fff3" }}>
+            {state.scores.marshall}
+          </div>
+          <div style={{ textAlign:"right" }}>
+            <div style={{ fontFamily:"'Bebas Neue'", fontSize:"22px", letterSpacing:"4px", lineHeight:1 }}>MARSHALL</div>
+            <div style={{ fontSize:"11px", opacity:0.6, letterSpacing:"2px" }}>BLUE TEAM</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Main Content ─── */}
+      <div style={{ position:"relative", zIndex:10, flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"20px 40px", minHeight:"calc(100vh - 110px)" }}>
+        {gp === "title" && (
+          <div className="animate-in" style={{ textAlign:"center" }}>
+            <div style={{ fontFamily:"'Bebas Neue'", fontSize:"min(140px, 18vw)", letterSpacing:"14px", lineHeight:1, textShadow:"0 0 80px #fff1" }}>BRAIN</div>
+            <div style={{ fontFamily:"'Bebas Neue'", fontSize:"min(110px, 14vw)", letterSpacing:"18px", lineHeight:1, opacity:0.7, marginTop:"-4px" }}>BOWL</div>
+            <div style={{ fontSize:"18px", fontWeight:300, letterSpacing:"8px", marginTop:"20px", opacity:0.4 }}>
+              IRVING vs MARSHALL{state.round === "jv" ? " • JV ROUND" : " • VARSITY"}
+            </div>
+          </div>
+        )}
+        {gp === "playing" && renderQuestion()}
+        {gp === "finished" && (
+          <div className="animate-in" style={{ textAlign:"center" }}>
+            <div style={{ fontSize:"22px", letterSpacing:"8px", opacity:0.4, fontWeight:300, marginBottom:"12px" }}>
+              {state.scores.irving === state.scores.marshall ? "IT'S A" : "THE WINNER IS"}
+            </div>
+            <div style={{
+              fontFamily:"'Bebas Neue'", fontSize:"min(120px, 15vw)", letterSpacing:"10px", lineHeight:1,
+              color: state.scores.irving > state.scores.marshall ? C.irvRed : state.scores.marshall > state.scores.irving ? C.marBlue : C.amber,
+              textShadow: `0 0 60px ${state.scores.irving > state.scores.marshall ? C.irvGlow : state.scores.marshall > state.scores.irving ? C.marGlow : C.amber+"44"}`,
+            }}>
+              {state.scores.irving > state.scores.marshall ? "IRVING" : state.scores.marshall > state.scores.irving ? "MARSHALL" : "TIE!"}
+            </div>
+            <div style={{ fontFamily:"'Bebas Neue'", fontSize:"min(72px, 9vw)", marginTop:"16px", fontWeight:300, opacity:0.7 }}>
+              {state.scores.irving} — {state.scores.marshall}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  🎤 HOST VIEW — MC's laptop screen (question+answer+ctrl)  ║
+// ╚══════════════════════════════════════════════════════════════╝
+function HostView({ state }) {
+  const q = QUESTIONS[state.currentQuestion];
+  const phase = state.questionPhase;
+  const remaining = useTimer(state.timerEnd);
+  const subQ = q?.type === "face_off" ? q.subQuestions?.[state.faceOffIndex] : q?.type === "minute_quiz" ? q.subQuestions?.[state.minuteQuizIndex] : null;
+  const currentQ = subQ?.question || q?.question || "";
+  const currentA = subQ?.answer || q?.answer || "";
+
+  const ctrl = (label, bg, fn) => (
+    <button onClick={fn} style={{ padding:"10px 20px", background:bg, color:"#fff", borderRadius:"8px", fontSize:"14px", fontWeight:700, flex:1 }}>{label}</button>
+  );
+
+  return (
+    <div style={{ minHeight:"100vh", background:"#0c0c14", display:"flex", flexDirection:"column", fontFamily:"'Outfit', sans-serif" }}>
+      {/* Top bar: scores */}
+      <div style={{ display:"flex", alignItems:"center", padding:"10px 20px", borderBottom:`1px solid ${C.border}`, gap:"16px", background:"#0a0a12" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+          <div style={{ width:"10px", height:"10px", borderRadius:"50%", background:C.irvRed }} />
+          <span style={{ fontWeight:700, fontSize:"14px" }}>IRVING</span>
+          <span style={{ fontFamily:"'Bebas Neue'", fontSize:"28px", color:C.irvRed }}>{state.scores.irving}</span>
+        </div>
+        <div style={{ flex:1, textAlign:"center" }}>
+          <span style={{ fontFamily:"'Bebas Neue'", fontSize:"16px", letterSpacing:"4px", opacity:0.4 }}>HOST VIEW</span>
+          {remaining > 0 && <span style={{ marginLeft:"16px", fontFamily:"'Bebas Neue'", fontSize:"22px", color: remaining<=10 ? C.red : C.textMuted }}> ⏱ {remaining}s</span>}
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:"8px" }}>
+          <span style={{ fontFamily:"'Bebas Neue'", fontSize:"28px", color:C.marBlue }}>{state.scores.marshall}</span>
+          <span style={{ fontWeight:700, fontSize:"14px" }}>MARSHALL</span>
+          <div style={{ width:"10px", height:"10px", borderRadius:"50%", background:C.marBlue }} />
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div style={{ flex:1, display:"flex", flexDirection:"column", padding:"20px 28px", gap:"16px", justifyContent:"center" }}>
+        {state.gamePhase === "title" && (
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontFamily:"'Bebas Neue'", fontSize:"48px", letterSpacing:"6px" }}>BRAIN BOWL</div>
+            <div style={{ opacity:0.4, marginTop:"4px" }}>Waiting to start...</div>
+            <div style={{ marginTop:"20px" }}>
+              {ctrl("▶ Start Game", C.green, () => updateGame({ gamePhase:"playing", questionPhase:"number", currentQuestion:0, scores:{irving:0,marshall:0} }))}
+            </div>
+          </div>
+        )}
+
+        {state.gamePhase === "playing" && q && (
+          <>
+            {/* Status bar */}
+            <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+              <TypeBadge type={q.type} />
+              <span style={{ fontSize:"13px", opacity:0.4 }}>
+                Question {state.currentQuestion + 1} of {QUESTIONS.length}
+                {q.type === "face_off" && ` • Face-off ${state.faceOffIndex+1}/${q.subQuestions.length}`}
+                {q.type === "minute_quiz" && ` • #${state.minuteQuizIndex+1}/${q.subQuestions.length} — ${state.minuteQuizCorrect} correct`}
+              </span>
+              <span style={{ fontSize:"13px", opacity:0.3, marginLeft:"auto" }}>
+                {phase === "number" ? "📋 Ready" : phase === "question" ? "❓ Showing" : "✅ Answer shown"}
+              </span>
+            </div>
+
+            {/* Question */}
+            <div style={{ background:C.bgCard, border:`1px solid ${C.border}`, borderRadius:"12px", padding:"20px 24px" }}>
+              <div style={{ fontSize:"12px", opacity:0.4, letterSpacing:"2px", fontWeight:600, marginBottom:"8px" }}>
+                {q.type === "face_off" ? `FACE OFF: ${q.theme}` : "QUESTION"}
+              </div>
+              <div style={{ fontSize:"22px", fontWeight:600, lineHeight:1.4 }}>{currentQ}</div>
+            </div>
+
+            {/* Answer (always visible to host) */}
+            <div style={{ background:C.greenDark+"33", border:`1px solid ${C.green}44`, borderRadius:"12px", padding:"16px 24px" }}>
+              <div style={{ fontSize:"11px", opacity:0.5, letterSpacing:"2px", fontWeight:600, marginBottom:"4px" }}>ANSWER</div>
+              <div style={{ fontSize:"26px", fontWeight:800, color:C.green }}>{currentA}</div>
+              {q.type === "pop_up" && (
+                <div style={{ fontSize:"14px", opacity:0.6, marginTop:"6px" }}>
+                  Parts: {q.parts.join(" • ")} ({state.popUpRevealed}/{q.parts.length} revealed)
+                </div>
+              )}
+            </div>
+
+            {/* Controls */}
+            <div style={{ display:"flex", gap:"8px" }}>
+              {phase === "number" && ctrl("Show Question →", "#6366f1", () => updateGame({ questionPhase:"question" }))}
+              {phase === "question" && q.type !== "minute_quiz" && ctrl("Reveal Answer →", C.green, () => updateGame({ questionPhase:"answer" }))}
+              {phase === "answer" && ctrl("Next Question →", "#6366f1", () => {
+                const next = state.currentQuestion + 1;
+                if (next >= QUESTIONS.length) updateGame({ gamePhase:"finished" });
+                else updateGame({ currentQuestion:next, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0 });
+              })}
+              {phase === "answer" && q.type === "face_off" && state.faceOffIndex < q.subQuestions.length-1 && (
+                ctrl(`Next Face-Off (${state.faceOffIndex+2}/${q.subQuestions.length})`, C.amber, () => updateGame({ faceOffIndex: state.faceOffIndex+1, questionPhase:"question" }))
+              )}
+            </div>
+
+            {/* Quick score (host can also award points) */}
+            <div style={{ display:"flex", gap:"8px" }}>
+              {ctrl(`Irving +${q.points || 1}`, C.irvRed, () => updateGame({ scores:{ ...state.scores, irving: state.scores.irving + (q.points||1) }}))}
+              {ctrl(`Marshall +${q.points || 1}`, C.marBlue, () => updateGame({ scores:{ ...state.scores, marshall: state.scores.marshall + (q.points||1) }}))}
+            </div>
+          </>
+        )}
+
+        {state.gamePhase === "finished" && (
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontFamily:"'Bebas Neue'", fontSize:"48px" }}>GAME OVER</div>
+            <div style={{ fontSize:"32px", fontFamily:"'Bebas Neue'", marginTop:"8px", opacity:0.6 }}>{state.scores.irving} — {state.scores.marshall}</div>
+            {ctrl("Reset Game", "#6366f1", () => setGame(DEFAULT_STATE))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  👤 CONTESTANT VIEW — Stage monitor (no answers!)           ║
+// ╚══════════════════════════════════════════════════════════════╝
+function ContestantView({ state }) {
+  const q = QUESTIONS[state.currentQuestion];
+  const phase = state.questionPhase;
+  const remaining = useTimer(state.timerEnd);
+  const subQ = q?.type === "face_off" ? q.subQuestions?.[state.faceOffIndex] : q?.type === "minute_quiz" ? q.subQuestions?.[state.minuteQuizIndex] : null;
+
+  return (
+    <div style={{ minHeight:"100vh", background:"#0a0a12", display:"flex", flexDirection:"column" }}>
+      {/* Scores */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 24px", borderBottom:`1px solid ${C.border}` }}>
+        <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+          <div style={{ width:"10px", height:"10px", borderRadius:"50%", background:C.irvRed }} />
+          <span style={{ fontWeight:700 }}>IRVING</span>
+          <span style={{ fontFamily:"'Bebas Neue'", fontSize:"32px", color:C.irvRed }}>{state.scores.irving}</span>
+        </div>
+        {remaining > 0 && (
+          <div style={{ fontFamily:"'Bebas Neue'", fontSize:"32px", color: remaining<=10 ? C.red : C.textMuted, animation: remaining<=10 ? "pulse 1s infinite" : "none" }}>
+            ⏱ {remaining}
+          </div>
+        )}
+        <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
+          <span style={{ fontFamily:"'Bebas Neue'", fontSize:"32px", color:C.marBlue }}>{state.scores.marshall}</span>
+          <span style={{ fontWeight:700 }}>MARSHALL</span>
+          <div style={{ width:"10px", height:"10px", borderRadius:"50%", background:C.marBlue }} />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"32px", textAlign:"center" }}>
+        {state.gamePhase === "title" && (
+          <div style={{ fontFamily:"'Bebas Neue'", fontSize:"56px", letterSpacing:"6px" }}>BRAIN BOWL</div>
+        )}
+        {state.gamePhase === "playing" && q && (
+          <>
+            {phase === "number" && (
+              <div className="animate-scale">
+                <TypeBadge type={q.type} size="lg" />
+                <div style={{ fontFamily:"'Bebas Neue'", fontSize:"80px", lineHeight:1, marginTop:"8px", opacity:0.8 }}>
+                  {state.currentQuestion + 1}
+                </div>
+              </div>
+            )}
+            {phase === "question" && (
+              <div className="animate-in" style={{ maxWidth:"700px" }}>
+                {q.type === "face_off" && <div style={{ fontSize:"15px", opacity:0.4, marginBottom:"8px", letterSpacing:"1px" }}>{q.theme}</div>}
+                <div style={{ fontSize:"26px", fontWeight:600, lineHeight:1.4 }}>
+                  {subQ?.question || q.question}
+                </div>
+                {q.type === "pop_up" && state.popUpRevealed > 0 && (
+                  <div style={{ marginTop:"20px", display:"flex", gap:"8px", justifyContent:"center", flexWrap:"wrap" }}>
+                    {q.parts.slice(0, state.popUpRevealed).map((p,i) => (
+                      <div key={i} style={{ background:C.green+"22", border:`1px solid ${C.green}44`, borderRadius:"8px", padding:"6px 16px", fontSize:"16px", fontWeight:600 }}>{p}</div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {phase === "answer" && (
+              <div className="animate-scale">
+                <div style={{ fontSize:"14px", opacity:0.3, letterSpacing:"3px", fontWeight:600, marginBottom:"8px" }}>ANSWER REVEALED</div>
+                <div style={{ fontSize:"16px", opacity:0.5 }}>Check the main screen</div>
+              </div>
+            )}
+          </>
+        )}
+        {state.gamePhase === "finished" && (
+          <div style={{ fontFamily:"'Bebas Neue'", fontSize:"48px" }}>GAME OVER</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  📋 SCOREKEEPER VIEW — Phone/tablet control panel           ║
+// ╚══════════════════════════════════════════════════════════════╝
+function ScorekeeperView({ state }) {
+  const q = QUESTIONS[state.currentQuestion];
+  const phase = state.questionPhase;
+  const [wI, setWI] = useState(0);
+  const [wM, setWM] = useState(0);
+  const [manPts, setManPts] = useState(1);
+  const remaining = useTimer(state.timerEnd);
+  const subQ = q?.type === "face_off" ? q.subQuestions?.[state.faceOffIndex] : q?.type === "minute_quiz" ? q.subQuestions?.[state.minuteQuizIndex] : null;
+
+  const btn = (label, bg, fn, extra={}) => (
+    <button onClick={fn} style={{ padding:"12px 16px", background:bg, color:"#fff", borderRadius:"10px", fontSize:"14px", fontWeight:700, width:"100%", ...extra }}>{label}</button>
+  );
+  const sm = (label, bg, fn, extra={}) => (
+    <button onClick={fn} style={{ padding:"8px 12px", background:bg, color:"#fff", borderRadius:"8px", fontSize:"12px", fontWeight:600, ...extra }}>{label}</button>
+  );
+
+  const nextQ = () => {
+    const next = state.currentQuestion + 1;
+    if (next >= QUESTIONS.length) updateGame({ gamePhase:"finished" });
+    else updateGame({ currentQuestion:next, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0 });
+  };
+  const awardIrving = (pts) => updateGame({ scores:{ ...state.scores, irving: state.scores.irving + pts }});
+  const awardMarshall = (pts) => updateGame({ scores:{ ...state.scores, marshall: state.scores.marshall + pts }});
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, maxWidth:"480px", margin:"0 auto" }}>
+      {/* Header */}
+      <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", justifyContent:"space-between", alignItems:"center", background:"#0a0a12" }}>
+        <span style={{ fontFamily:"'Bebas Neue'", fontSize:"16px", letterSpacing:"3px" }}>SCOREKEEPER</span>
+        <span style={{ fontSize:"11px", opacity:0.3 }}>Q{state.currentQuestion+1}/{QUESTIONS.length} • {state.round.toUpperCase()}</span>
+      </div>
+
+      {/* Scores */}
+      <div style={{ display:"flex", gap:"8px", padding:"10px 16px" }}>
+        <div style={{ flex:1, background:C.irvRed+"15", border:`1px solid ${C.irvRed}33`, borderRadius:"10px", padding:"8px", textAlign:"center" }}>
+          <div style={{ fontSize:"11px", opacity:0.5, letterSpacing:"2px" }}>IRVING</div>
+          <div style={{ fontFamily:"'Bebas Neue'", fontSize:"36px", color:C.irvRed, lineHeight:1.1 }}>{state.scores.irving}</div>
+        </div>
+        <div style={{ flex:1, background:C.marBlue+"15", border:`1px solid ${C.marBlue}33`, borderRadius:"10px", padding:"8px", textAlign:"center" }}>
+          <div style={{ fontSize:"11px", opacity:0.5, letterSpacing:"2px" }}>MARSHALL</div>
+          <div style={{ fontFamily:"'Bebas Neue'", fontSize:"36px", color:C.marBlue, lineHeight:1.1 }}>{state.scores.marshall}</div>
+        </div>
+      </div>
+
+      {/* Current Q info */}
+      {q && state.gamePhase === "playing" && (
+        <div style={{ padding:"0 16px 10px", borderBottom:`1px solid ${C.border}` }}>
+          <div style={{ display:"flex", gap:"8px", alignItems:"center", marginBottom:"4px" }}>
+            <TypeBadge type={q.type} />
+            {remaining > 0 && <span style={{ fontSize:"13px", fontFamily:"'Bebas Neue'", color: remaining<=10 ? C.red : C.textMuted }}>⏱ {remaining}s</span>}
+          </div>
+          <div style={{ fontSize:"13px", opacity:0.6, lineHeight:1.4 }}>{subQ?.question || q.question}</div>
+          <div style={{ fontSize:"13px", color:C.green, fontWeight:700, marginTop:"3px" }}>→ {subQ?.answer || q.answer}</div>
+          {q.type === "pop_up" && <div style={{ fontSize:"11px", opacity:0.4, marginTop:"2px" }}>Parts: {q.parts.join(", ")} ({state.popUpRevealed} revealed)</div>}
+        </div>
+      )}
+
+      {/* Controls */}
+      <div style={{ padding:"10px 16px", display:"flex", flexDirection:"column", gap:"8px" }}>
+        {/* Title phase */}
+        {state.gamePhase === "title" && (
+          <>
+            <div style={{ display:"flex", gap:"8px", marginBottom:"4px" }}>
+              {sm("JV", state.round==="jv" ? "#fff2" : "#1a1a2e", () => updateGame({ round:"jv" }), { border: state.round==="jv" ? "1px solid #fff4" : "1px solid #222", flex:1 })}
+              {sm("VARSITY", state.round==="varsity" ? "#fff2" : "#1a1a2e", () => updateGame({ round:"varsity" }), { border: state.round==="varsity" ? "1px solid #fff4" : "1px solid #222", flex:1 })}
+            </div>
+            {btn("▶ Start Game", C.green, () => updateGame({ gamePhase:"playing", questionPhase:"number", currentQuestion:0, scores:{irving:0,marshall:0} }))}
+          </>
+        )}
+
+        {/* Playing phase */}
+        {state.gamePhase === "playing" && q && (
+          <>
+            {/* Phase advancement */}
+            <div style={{ display:"flex", gap:"8px" }}>
+              {phase === "number" && btn("Show Question", "#6366f1", () => updateGame({ questionPhase:"question" }))}
+              {phase === "question" && q.type !== "minute_quiz" && btn("Reveal Answer", C.green, () => updateGame({ questionPhase:"answer" }))}
+              {phase === "answer" && (
+                <>
+                  {btn("Next Question →", "#6366f1", nextQ)}
+                  {q.type === "face_off" && state.faceOffIndex < q.subQuestions.length - 1 && (
+                    btn(`Next Face-Off (${state.faceOffIndex+2}/${q.subQuestions.length})`, C.amber, () => updateGame({ faceOffIndex:state.faceOffIndex+1, questionPhase:"question" }))
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Scoring controls */}
+            {(phase === "question" || phase === "answer") && q.type !== "minute_quiz" && (
+              <>
+                {/* Wager inputs */}
+                {q.type === "wager" && phase === "question" && (
+                  <div style={{ display:"flex", gap:"8px" }}>
+                    <div style={{ flex:1 }}>
+                      <label style={{ fontSize:"10px", opacity:0.4, letterSpacing:"1px" }}>IRVING WAGER</label>
+                      <input type="number" min="0" value={wI} onChange={e => { setWI(+e.target.value); updateGame({ wagerIrving: +e.target.value }); }}
+                        style={{ width:"100%", padding:"8px", borderRadius:"8px", border:`1px solid ${C.irvRed}44`, background:"#111", color:"white", fontSize:"18px" }} />
+                    </div>
+                    <div style={{ flex:1 }}>
+                      <label style={{ fontSize:"10px", opacity:0.4, letterSpacing:"1px" }}>MARSHALL WAGER</label>
+                      <input type="number" min="0" value={wM} onChange={e => { setWM(+e.target.value); updateGame({ wagerMarshall: +e.target.value }); }}
+                        style={{ width:"100%", padding:"8px", borderRadius:"8px", border:`1px solid ${C.marBlue}44`, background:"#111", color:"white", fontSize:"18px" }} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Pop-up point selector */}
+                {q.type === "pop_up" && (
+                  <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
+                    <span style={{ fontSize:"11px", opacity:0.4 }}>Points:</span>
+                    {[1,2,3,4].map(p => (
+                      <button key={p} onClick={() => setManPts(p)} style={{
+                        padding:"6px 14px", borderRadius:"8px", fontSize:"13px", fontWeight:700,
+                        background: p===manPts ? C.green : "#222", color:"white", border: p===manPts ? `1px solid ${C.green}` : "1px solid #333",
+                      }}>{p}</button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Award buttons */}
+                <div style={{ fontSize:"10px", opacity:0.3, letterSpacing:"2px", fontWeight:600 }}>AWARD POINTS</div>
+                <div style={{ display:"flex", gap:"8px" }}>
+                  {btn(
+                    `Irving +${q.type==="wager" ? wI : q.type==="pop_up" ? manPts : q.points||1}`,
+                    C.irvRed,
+                    () => awardIrving(q.type==="wager" ? wI : q.type==="pop_up" ? manPts : q.points||1)
+                  )}
+                  {btn(
+                    `Marshall +${q.type==="wager" ? wM : q.type==="pop_up" ? manPts : q.points||1}`,
+                    C.marBlue,
+                    () => awardMarshall(q.type==="wager" ? wM : q.type==="pop_up" ? manPts : q.points||1)
+                  )}
+                </div>
+
+                {/* Pop-up reveal button */}
+                {q.type === "pop_up" && state.popUpRevealed < q.parts.length && (
+                  btn(`Reveal Part (${state.popUpRevealed+1}/${q.parts.length})`, C.green+"cc", () => updateGame({ popUpRevealed: state.popUpRevealed+1 }))
+                )}
+              </>
+            )}
+
+            {/* Minute Quiz controls */}
+            {q.type === "minute_quiz" && phase === "question" && (
+              <>
+                <div style={{ display:"flex", gap:"8px", marginBottom:"4px" }}>
+                  <div style={{ flex:1 }}>
+                    <label style={{ fontSize:"10px", opacity:0.4 }}>TEAM:</label>
+                    <div style={{ display:"flex", gap:"4px", marginTop:"2px" }}>
+                      {sm("Irving", state.minuteQuizTeam==="irving" ? C.irvRed : "#222", () => updateGame({ minuteQuizTeam:"irving" }), { flex:1, border:`1px solid ${state.minuteQuizTeam==="irving" ? C.irvRed : "#333"}` })}
+                      {sm("Marshall", state.minuteQuizTeam==="marshall" ? C.marBlue : "#222", () => updateGame({ minuteQuizTeam:"marshall" }), { flex:1, border:`1px solid ${state.minuteQuizTeam==="marshall" ? C.marBlue : "#333"}` })}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display:"flex", gap:"8px" }}>
+                  {btn("✓ Correct", "#059669", () => {
+                    const nextIdx = state.minuteQuizIndex + 1;
+                    if (nextIdx >= q.subQuestions.length) updateGame({ minuteQuizCorrect: state.minuteQuizCorrect+1, questionPhase:"answer", timerEnd:0 });
+                    else updateGame({ minuteQuizCorrect: state.minuteQuizCorrect+1, minuteQuizIndex: nextIdx });
+                  })}
+                  {btn("✗ Skip", "#dc2626", () => {
+                    const nextIdx = state.minuteQuizIndex + 1;
+                    if (nextIdx >= q.subQuestions.length) updateGame({ questionPhase:"answer", timerEnd:0 });
+                    else updateGame({ minuteQuizIndex: nextIdx });
+                  })}
+                </div>
+                {btn(
+                  remaining > 0 ? `⏸ Pause Timer (${remaining}s)` : "▶ Start 60s Timer",
+                  remaining > 0 ? "#dc2626" : C.green,
+                  () => {
+                    if (remaining > 0) updateGame({ timerEnd: 0, timerPaused: remaining * 1000 });
+                    else updateGame({ timerEnd: Date.now() + (state.timerPaused || 60000), timerPaused: 0 });
+                  }
+                )}
+                {/* Award minute quiz points at end */}
+                {state.minuteQuizCorrect > 0 && (
+                  <div style={{ display:"flex", gap:"8px" }}>
+                    {btn(`Award ${state.minuteQuizCorrect} pts to ${state.minuteQuizTeam === "irving" ? "Irving" : "Marshall"}`,
+                      state.minuteQuizTeam === "irving" ? C.irvRed : C.marBlue,
+                      () => {
+                        const team = state.minuteQuizTeam;
+                        updateGame({ scores: { ...state.scores, [team]: state.scores[team] + state.minuteQuizCorrect }});
+                      }
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+            {q.type === "minute_quiz" && phase === "answer" && state.minuteQuizCorrect > 0 && (
+              <div style={{ display:"flex", gap:"8px" }}>
+                {btn(`Award ${state.minuteQuizCorrect} pts to ${state.minuteQuizTeam === "irving" ? "Irving" : "Marshall"}`,
+                  state.minuteQuizTeam === "irving" ? C.irvRed : C.marBlue,
+                  () => {
+                    const team = state.minuteQuizTeam;
+                    updateGame({ scores: { ...state.scores, [team]: state.scores[team] + state.minuteQuizCorrect }});
+                  }
+                )}
+              </div>
+            )}
+
+            {/* Timer controls (non-minute-quiz) */}
+            {q.type !== "minute_quiz" && phase === "question" && (
+              <div style={{ display:"flex", gap:"6px" }}>
+                {[15,30,60].map(s => sm(`${s}s`, "#222", () => updateGame({ timerEnd: Date.now() + s*1000, timerPaused:0 }), { flex:1, border:"1px solid #333" }))}
+                {remaining > 0 && sm("Clear", C.red+"aa", () => updateGame({ timerEnd:0, timerPaused:0 }), { flex:1 })}
+              </div>
+            )}
+
+            {/* Manual adjust */}
+            <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:"8px", marginTop:"4px" }}>
+              <div style={{ fontSize:"10px", opacity:0.3, letterSpacing:"1px", marginBottom:"4px" }}>MANUAL ADJUST</div>
+              <div style={{ display:"flex", gap:"4px", flexWrap:"wrap" }}>
+                {sm("Irving +1", C.irvDark, () => awardIrving(1), { flex:1 })}
+                {sm("Irving −1", "#333", () => updateGame({ scores:{ ...state.scores, irving: Math.max(0, state.scores.irving-1) }}), { flex:1 })}
+                {sm("Marshall +1", C.marDark, () => awardMarshall(1), { flex:1 })}
+                {sm("Marshall −1", "#333", () => updateGame({ scores:{ ...state.scores, marshall: Math.max(0, state.scores.marshall-1) }}), { flex:1 })}
+              </div>
+            </div>
+
+            {/* Nav */}
+            <div style={{ display:"flex", gap:"6px", marginTop:"4px" }}>
+              {sm("⏭ Skip", "#333", nextQ, { flex:1 })}
+              {sm("🏁 End Game", "#7f1d1d", () => updateGame({ gamePhase:"finished", timerEnd:0 }), { flex:1 })}
+            </div>
+          </>
+        )}
+
+        {state.gamePhase === "finished" && (
+          <>
+            <div style={{ textAlign:"center", padding:"12px" }}>
+              <div style={{ fontFamily:"'Bebas Neue'", fontSize:"28px" }}>GAME OVER</div>
+              <div style={{ fontSize:"20px", fontFamily:"'Bebas Neue'", opacity:0.6 }}>{state.scores.irving} — {state.scores.marshall}</div>
+            </div>
+            {btn("Reset Game", "#6366f1", () => setGame(DEFAULT_STATE))}
+          </>
+        )}
+      </div>
+
+      {/* Question jump list */}
+      {state.gamePhase === "playing" && (
+        <div style={{ padding:"10px 16px", borderTop:`1px solid ${C.border}` }}>
+          <div style={{ fontSize:"10px", opacity:0.3, letterSpacing:"1px", marginBottom:"6px" }}>QUESTION LIST</div>
+          <div style={{ maxHeight:"180px", overflow:"auto", display:"flex", flexDirection:"column", gap:"3px" }}>
+            {QUESTIONS.map((qq, i) => (
+              <button key={qq.id} onClick={() => updateGame({ currentQuestion:i, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0 })}
+                style={{
+                  padding:"5px 8px", borderRadius:"6px", textAlign:"left", display:"flex", gap:"6px", alignItems:"center",
+                  background: i===state.currentQuestion ? "#ffffff11" : "transparent",
+                  color: i < state.currentQuestion ? "#444" : i===state.currentQuestion ? "#fff" : "#777",
+                  fontSize:"11px", border: i===state.currentQuestion ? "1px solid #333" : "1px solid transparent",
+                }}>
+                <span style={{ width:"18px", height:"18px", borderRadius:"4px", display:"flex", alignItems:"center", justifyContent:"center", fontSize:"9px", fontWeight:700, background:TYPE_COLORS[qq.type]+"22", color:TYPE_COLORS[qq.type], flexShrink:0 }}>{i+1}</span>
+                <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                  {qq.type==="face_off" ? `Face Off: ${qq.theme}` : qq.type==="minute_quiz" ? "Minute Quiz" : qq.question?.substring(0,45)+"..."}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  🏠 MENU / LAUNCHER                                        ║
+// ╚══════════════════════════════════════════════════════════════╝
+function Menu() {
+  const views = [
+    { id:"audience", label:"🖥️ Audience Display", desc:"Projector — big screen for the crowd", color:"#6366f1" },
+    { id:"host", label:"🎤 Host View", desc:"MC's screen — questions, answers, controls", color:C.green },
+    { id:"scorekeeper", label:"📋 Scorekeeper", desc:"Phone/tablet — score control panel", color:C.amber },
+    { id:"contestant", label:"👤 Contestant Monitor", desc:"Stage monitor — no answers shown", color:C.cyan },
+  ];
+
+  return (
+    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px", position:"relative" }}>
+      <div style={{ position:"absolute", inset:0, opacity:0.08, background:`radial-gradient(ellipse at 30% 50%, ${C.irvRed}55 0%, transparent 50%), radial-gradient(ellipse at 70% 50%, ${C.marBlue}55 0%, transparent 50%)`, pointerEvents:"none" }} />
+
+      <div style={{ position:"relative", textAlign:"center", marginBottom:"32px" }}>
+        <div style={{ fontFamily:"'Bebas Neue'", fontSize:"min(80px, 14vw)", letterSpacing:"10px", lineHeight:1 }}>BRAIN BOWL</div>
+        <div style={{ fontSize:"13px", letterSpacing:"6px", opacity:0.3, marginTop:"4px" }}>GAME CONTROL CENTER</div>
+      </div>
+
+      {!IS_CONFIGURED && (
+        <div style={{ position:"relative", background:"#f59e0b15", border:"1px solid #f59e0b44", borderRadius:"12px", padding:"16px 20px", maxWidth:"400px", marginBottom:"20px" }}>
+          <div style={{ fontSize:"14px", fontWeight:700, color:C.amber, marginBottom:"4px" }}>⚠️ Firebase Not Configured</div>
+          <div style={{ fontSize:"12px", opacity:0.6, lineHeight:1.6 }}>
+            Cross-device sync is disabled. To enable it, add your Firebase config to the top of this file. See <b>SETUP.md</b> for instructions.
+          </div>
+        </div>
+      )}
+
+      <div style={{ position:"relative", display:"flex", flexDirection:"column", gap:"10px", width:"min(380px, 90vw)" }}>
+        {views.map(v => (
+          <a key={v.id} href={`#${v.id}`} onClick={() => window.location.hash = v.id}
+            style={{
+              padding:"16px 20px", borderRadius:"12px", textDecoration:"none", color:"white",
+              background:`${v.color}0a`, border:`1px solid ${v.color}33`,
+              display:"flex", flexDirection:"column", gap:"2px", transition:"all 0.2s",
+            }}
+            onMouseOver={e => { e.currentTarget.style.background = `${v.color}18`; e.currentTarget.style.borderColor = `${v.color}66`; }}
+            onMouseOut={e => { e.currentTarget.style.background = `${v.color}0a`; e.currentTarget.style.borderColor = `${v.color}33`; }}
+          >
+            <span style={{ fontSize:"17px", fontWeight:700 }}>{v.label}</span>
+            <span style={{ fontSize:"12px", opacity:0.5 }}>{v.desc}</span>
+          </a>
+        ))}
+      </div>
+
+      <div style={{ position:"relative", marginTop:"28px", padding:"16px 20px", background:"#ffffff06", borderRadius:"12px", maxWidth:"400px", border:"1px solid #ffffff0a" }}>
+        <div style={{ fontSize:"13px", fontWeight:600, marginBottom:"6px", opacity:0.7 }}>💡 Setup for the event</div>
+        <div style={{ fontSize:"12px", opacity:0.4, lineHeight:1.7 }}>
+          <b>Host laptop:</b> Open Audience Display (drag to projector, press F11 for fullscreen) + Host View on laptop screen.<br/>
+          <b>Scorekeeper:</b> Open Scorekeeper on phone/tablet — same URL, different view.<br/>
+          <b>Stage monitor:</b> Open Contestant View on a separate device.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  🚀 APP — Hash-based routing                               ║
+// ╚══════════════════════════════════════════════════════════════╝
+function App() {
+  const [view, setView] = useState(window.location.hash.slice(1) || "menu");
+  const { state, connected } = useGameState();
+
+  useEffect(() => {
+    const handler = () => setView(window.location.hash.slice(1) || "menu");
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, []);
+
+  if (view === "menu" || !view) return <Menu />;
+
+  return (
+    <div>
+      {/* Connection indicator (small, non-intrusive) */}
+      {IS_CONFIGURED && (
+        <div style={{
+          position:"fixed", top:"6px", left:"6px", zIndex:9999, display:"flex", alignItems:"center", gap:"4px",
+          background:"#000a", backdropFilter:"blur(8px)", padding:"3px 8px", borderRadius:"6px", fontSize:"10px", opacity:0.5,
+        }}>
+          <div style={{ width:"6px", height:"6px", borderRadius:"50%", background: connected ? C.green : C.red }} />
+          {connected ? "Live" : "Reconnecting..."}
+        </div>
+      )}
+      {/* Back to menu */}
+      <a href="#menu" style={{
+        position:"fixed", top:"6px", right:"6px", zIndex:9999,
+        background:"#000a", backdropFilter:"blur(8px)", padding:"4px 10px", borderRadius:"6px",
+        fontSize:"11px", color:"#888", textDecoration:"none",
+      }}>← Menu</a>
+
+      {view === "audience" && <AudienceView state={state} />}
+      {view === "host" && <HostView state={state} />}
+      {view === "contestant" && <ContestantView state={state} />}
+      {view === "scorekeeper" && <ScorekeeperView state={state} />}
+    </div>
+  );
+}
+
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  RENDER                                                     ║
+// ╚══════════════════════════════════════════════════════════════╝
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
