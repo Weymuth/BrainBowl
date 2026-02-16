@@ -260,63 +260,22 @@ function getAudioCtx() {
   return audioCtx;
 }
 
-function playOink() {
+function speak(text, pitch, rate) {
   try {
-    const ctx = getAudioCtx();
-    const now = ctx.currentTime;
-    // Two short nasal "oinks"
-    [0, 0.25].forEach(offset => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const filter = ctx.createBiquadFilter();
-      osc.type = "sawtooth";
-      osc.frequency.setValueAtTime(280, now + offset);
-      osc.frequency.linearRampToValueAtTime(180, now + offset + 0.12);
-      filter.type = "bandpass";
-      filter.frequency.value = 800;
-      filter.Q.value = 5;
-      gain.gain.setValueAtTime(0.6, now + offset);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + offset + 0.15);
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now + offset);
-      osc.stop(now + offset + 0.18);
-    });
-  } catch(e) { console.log("Audio error:", e); }
+    const u = new SpeechSynthesisUtterance(text);
+    u.pitch = pitch || 1;
+    u.rate = rate || 1;
+    u.volume = 1;
+    window.speechSynthesis.speak(u);
+  } catch(e) { console.log("Speech error:", e); }
+}
+
+function playOink() {
+  speak("oink oink!", 1.8, 1.3);
 }
 
 function playYeeHaw() {
-  try {
-    const ctx = getAudioCtx();
-    const now = ctx.currentTime;
-    // "Yee" - quick ascending whistle
-    const osc1 = ctx.createOscillator();
-    const gain1 = ctx.createGain();
-    osc1.type = "triangle";
-    osc1.frequency.setValueAtTime(400, now);
-    osc1.frequency.linearRampToValueAtTime(900, now + 0.2);
-    gain1.gain.setValueAtTime(0.5, now);
-    gain1.gain.linearRampToValueAtTime(0.6, now + 0.15);
-    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-    osc1.connect(gain1);
-    gain1.connect(ctx.destination);
-    osc1.start(now);
-    osc1.stop(now + 0.35);
-    // "Haw" - descending slide
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.type = "triangle";
-    osc2.frequency.setValueAtTime(850, now + 0.25);
-    osc2.frequency.linearRampToValueAtTime(350, now + 0.6);
-    gain2.gain.setValueAtTime(0.6, now + 0.25);
-    gain2.gain.linearRampToValueAtTime(0.5, now + 0.45);
-    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.start(now + 0.25);
-    osc2.stop(now + 0.75);
-  } catch(e) { console.log("Audio error:", e); }
+  speak("yee haw!", 0.8, 0.9);
 }
 
 // ╔══════════════════════════════════════════════════════════════╗
@@ -360,13 +319,10 @@ function AudienceView({ state }) {
 
   const unlockAudio = () => {
     try {
-      const ctx = getAudioCtx();
-      // Play a silent buffer to unlock audio on mobile
-      const buf = ctx.createBuffer(1, 1, 22050);
-      const src = ctx.createBufferSource();
-      src.buffer = buf;
-      src.connect(ctx.destination);
-      src.start(0);
+      // Prime speech synthesis
+      const u = new SpeechSynthesisUtterance("");
+      u.volume = 0;
+      window.speechSynthesis.speak(u);
       setAudioReady(true);
     } catch(e) { setAudioReady(true); }
   };
@@ -489,11 +445,11 @@ function AudienceView({ state }) {
         {/* Irving */}
         <div style={{
           background:`linear-gradient(135deg, ${C.irvRed}, ${C.irvDark})`, borderRadius:"14px 0 0 14px",
-          padding:"10px 32px", display:"flex", alignItems:"center", gap:"20px", minWidth:"260px", justifyContent:"space-between",
+          padding:"10px 32px", display:"flex", alignItems:"center", gap:"20px", minWidth:"180px", justifyContent:"space-between",
           boxShadow: flash==="irving" ? `0 0 40px ${C.irvRed}88` : `0 0 20px ${C.irvGlow}`,
           border:`1px solid ${C.irvRed}66`, transition:"box-shadow 0.3s",
         }}>
-          <img src={IRVING_LOGO} alt="Irving" style={{ height:"50px", filter:"brightness(1.2)" }} />
+          <img src={IRVING_LOGO} alt="Irving" style={{ width:"50px", height:"50px", objectFit:"contain", flexShrink:0, filter:"brightness(0) invert(1)" }} />
           <div>
             <div style={{ fontFamily:"'Bebas Neue'", fontSize:"22px", letterSpacing:"4px", lineHeight:1 }}>IRVING</div>
             <div style={{ fontSize:"11px", opacity:0.6, letterSpacing:"2px" }}>RED TEAM</div>
@@ -512,7 +468,7 @@ function AudienceView({ state }) {
         {/* Marshall */}
         <div style={{
           background:`linear-gradient(135deg, ${C.marDark}, ${C.marBlue})`, borderRadius:"0 14px 14px 0",
-          padding:"10px 32px", display:"flex", alignItems:"center", gap:"20px", minWidth:"260px", justifyContent:"space-between",
+          padding:"10px 32px", display:"flex", alignItems:"center", gap:"20px", minWidth:"180px", justifyContent:"space-between",
           boxShadow: flash==="marshall" ? `0 0 40px ${C.marBlue}88` : `0 0 20px ${C.marGlow}`,
           border:`1px solid ${C.marBlue}66`, transition:"box-shadow 0.3s",
         }}>
@@ -523,7 +479,7 @@ function AudienceView({ state }) {
             <div style={{ fontFamily:"'Bebas Neue'", fontSize:"22px", letterSpacing:"4px", lineHeight:1 }}>MARSHALL</div>
             <div style={{ fontSize:"11px", opacity:0.6, letterSpacing:"2px" }}>BLUE TEAM</div>
           </div>
-          <img src={MARSHALL_LOGO} alt="Marshall" style={{ height:"50px", filter:"brightness(1.3)" }} />
+          <img src={MARSHALL_LOGO} alt="Marshall" style={{ width:"50px", height:"50px", objectFit:"contain", flexShrink:0, filter:"brightness(0) invert(1)" }} />
         </div>
       </div>
 
@@ -534,11 +490,11 @@ function AudienceView({ state }) {
             <div style={{ fontFamily:"'Bebas Neue'", fontSize:"min(140px, 18vw)", letterSpacing:"14px", lineHeight:1, textShadow:"0 0 80px #fff1" }}>BRAIN</div>
             <div style={{ fontFamily:"'Bebas Neue'", fontSize:"min(110px, 14vw)", letterSpacing:"18px", lineHeight:1, opacity:0.7, marginTop:"-4px" }}>BOWL</div>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:"32px", marginTop:"20px" }}>
-              <img src={IRVING_LOGO} alt="Irving" style={{ height:"80px", filter:"brightness(1.2)" }} />
+              <img src={IRVING_LOGO} alt="Irving" style={{ width:"80px", height:"80px", objectFit:"contain" }} />
               <div style={{ fontSize:"18px", fontWeight:300, letterSpacing:"8px", opacity:0.4 }}>
                 vs
               </div>
-              <img src={MARSHALL_LOGO} alt="Marshall" style={{ height:"80px", filter:"brightness(1.3)" }} />
+              <img src={MARSHALL_LOGO} alt="Marshall" style={{ width:"80px", height:"80px", objectFit:"contain" }} />
             </div>
             <div style={{ fontSize:"14px", fontWeight:300, letterSpacing:"6px", marginTop:"12px", opacity:0.3 }}>
               {state.round === "jv" ? "JV ROUND" : "VARSITY"}
