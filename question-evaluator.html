@@ -185,13 +185,8 @@ function App() {
       text = text.replace(/^(const|let|var)\s+\w+\s*=\s*/, '');
       // Remove trailing semicolon
       text = text.replace(/;\s*$/, '');
-      // Strip single-line comments (// ...)
-      text = text.replace(/\/\/[^\n]*/g, '');
-      // Strip multi-line comments (/* ... */)
-      text = text.replace(/\/\*[\s\S]*?\*\//g, '');
-      // Remove trailing commas before ] or }
-      text = text.replace(/,\s*([}\]])/g, '$1');
-      const parsed = eval('(' + text + ')');
+      // Use Function constructor — handles JS comments, trailing commas, unquoted keys natively
+      const parsed = new Function('return ' + text)();
       if (Array.isArray(parsed) && parsed.length > 0) {
         setQuestions(parsed);
         setImported(true);
@@ -210,7 +205,7 @@ function App() {
         alert('Could not parse questions. Make sure it\'s a valid JavaScript array.');
       }
     } catch(e) {
-      alert('Parse error: ' + e.message);
+      alert('Parse error: ' + e.message + '\n\nTip: Make sure you\'re pasting a valid JavaScript array starting with [ and ending with ]');
     }
   };
 
