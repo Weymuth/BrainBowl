@@ -1303,6 +1303,29 @@ function HostView({ state }) {
               )}
             </div>
 
+            {/* Buzzer controls — host controls buzzers */}
+            {phase === "question" && q.type !== "minute_quiz" && q.type !== "wager" && q.type !== "all_play" && q.type !== "spelling" && q.type !== "estimation" && q.type !== "this_or_that" && q.type !== "order" && q.type !== "pop_up" && (
+              <div style={{ display:"flex", gap:"8px" }}>
+                {!state.buzzerOpen && !state.buzzerWinner && ctrl("🔓 Open Buzzers", "#059669", () => updateGame({ buzzerOpen:true }))}
+                {state.buzzerOpen && !state.buzzerWinner && ctrl("🔒 Lock Buzzers", C.red, () => updateGame({ buzzerOpen:false }))}
+                {state.buzzerWinner && ctrl("🔄 Reset Buzzers", "#6366f1", () => updateGame({ buzzerOpen:false, buzzerWinner:null, buzzerTimeIrving:0, buzzerTimeMarshall:0 }))}
+              </div>
+            )}
+
+            {/* Pop-up reveal controls — host reveals parts */}
+            {q.type === "pop_up" && phase === "question" && (
+              <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
+                <span style={{ fontSize:"12px", opacity:0.4 }}>Reveal parts:</span>
+                {q.parts.map((p,i) => (
+                  <button key={i} onClick={() => updateGame({ popUpRevealed: i+1 })} style={{
+                    padding:"6px 12px", borderRadius:"8px", fontSize:"12px", fontWeight:700,
+                    background: i < state.popUpRevealed ? C.green+"33" : "#222", color:"white",
+                    border: i < state.popUpRevealed ? `1px solid ${C.green}` : "1px solid #333",
+                  }}>{i+1}. {p}</button>
+                ))}
+              </div>
+            )}
+
             {/* Minute Quiz host controls */}
             {q.type === "minute_quiz" && phase === "question" && (
               <div style={{ display:"flex", gap:"8px" }}>
@@ -1319,20 +1342,6 @@ function HostView({ state }) {
                 {ctrl("⏹ End Quiz", "#6366f1", () => updateGame({ questionPhase:"answer", timerEnd:0 }))}
               </div>
             )}
-
-            <div style={{ display:"flex", gap:"8px" }}>
-              {q.type === "minute_quiz" && phase === "answer" && state.minuteQuizCorrect > 0 ? (
-                <>
-                  {ctrl(`Award ${state.minuteQuizCorrect} pts → Irving`, C.irvRed, () => updateGame({ scores:{ ...state.scores, irving: state.scores.irving + state.minuteQuizCorrect }}))}
-                  {ctrl(`Award ${state.minuteQuizCorrect} pts → Marshall`, C.marBlue, () => updateGame({ scores:{ ...state.scores, marshall: state.scores.marshall + state.minuteQuizCorrect }}))}
-                </>
-              ) : (
-                <>
-                  {ctrl(`Irving +${q.points || 1}`, C.irvRed, () => updateGame({ scores:{ ...state.scores, irving: state.scores.irving + (q.points||1) }}))}
-                  {ctrl(`Marshall +${q.points || 1}`, C.marBlue, () => updateGame({ scores:{ ...state.scores, marshall: state.scores.marshall + (q.points||1) }}))}
-                </>
-              )}
-            </div>
           </>
         )}
 
@@ -1866,44 +1875,39 @@ function ScorekeeperView({ state }) {
 
         {/* Halftime */}
         {state.gamePhase === "halftime" && (
-          <>
-            <div style={{ textAlign:"center", padding:"8px" }}>
-              <div style={{ fontFamily:"'Bebas Neue'", fontSize:"24px" }}>HALFTIME</div>
-              <div style={{ fontSize:"16px", opacity:0.5 }}>{state.scores.irving} — {state.scores.marshall}</div>
-            </div>
-            {btn("▶ Resume Game", C.green, () => {
-              const next = HALFTIME_AFTER;
-              updateGame({ gamePhase:"playing", currentQuestion:next, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0, buzzerOpen:false, buzzerWinner:null, teamAnswerIrving:"", teamAnswerMarshall:"", wagerLockedIrving:false, wagerLockedMarshall:false, estimateIrving:"", estimateMarshall:"", estimateLockedIrving:false, estimateLockedMarshall:false, wrongTeam:null, countdownValue:0 });
-            })}
-          </>
+          <div style={{ textAlign:"center", padding:"16px" }}>
+            <div style={{ fontFamily:"'Bebas Neue'", fontSize:"24px" }}>HALFTIME</div>
+            <div style={{ fontSize:"16px", opacity:0.5 }}>{state.scores.irving} — {state.scores.marshall}</div>
+            <div style={{ fontSize:"12px", opacity:0.3, marginTop:"8px" }}>Host will resume game</div>
+          </div>
         )}
 
         {/* Playing phase */}
         {state.gamePhase === "playing" && q && (
           <>
-            {/* Phase advancement */}
-            <div style={{ display:"flex", gap:"8px" }}>
-              {phase === "number" && btn("Show Question", "#6366f1", () => {
-                const tl = getTimeLimit(q);
-                updateGame({ questionPhase:"question", timerEnd: tl > 0 ? Date.now() + tl * 1000 : 0 });
-              })}
-              {phase === "question" && q.type !== "minute_quiz" && btn("Reveal Answer", C.green, () => updateGame({ questionPhase:"answer" }))}
-              {phase === "answer" && (
-                <>
-                  {btn("Next Question →", "#6366f1", nextQ)}
-                  {q.type === "face_off" && state.faceOffIndex < q.subQuestions.length - 1 && (
-                    btn(`Next Face-Off (${state.faceOffIndex+2}/${q.subQuestions.length})`, C.amber, () => updateGame({ faceOffIndex:state.faceOffIndex+1, questionPhase:"question", buzzerOpen:false, buzzerWinner:null, teamAnswerIrving:"", teamAnswerMarshall:"" }))
-                  )}
-                </>
-              )}
+            {/* Status display — host controls flow */}
+            <div style={{ display:"flex", alignItems:"center", gap:"6px", padding:"6px 10px", background:"#111", borderRadius:"8px", border:"1px solid #222" }}>
+              <TypeBadge type={q.type} subject={q?.subject} />
+              <span style={{ fontSize:"12px", opacity:0.4, marginLeft:"auto" }}>
+                Q{state.currentQuestion+1}/{QUESTIONS.length}
+                {q.type === "face_off" && ` • FO ${state.faceOffIndex+1}/${q.subQuestions.length}`}
+                {q.type === "minute_quiz" && ` • #${state.minuteQuizIndex+1} — ${state.minuteQuizCorrect}✓`}
+              </span>
+              <span style={{ fontSize:"11px", padding:"2px 8px", borderRadius:"4px",
+                background: phase === "number" ? "#6366f122" : phase === "question" ? "#f59e0b22" : "#10b98122",
+                color: phase === "number" ? "#6366f1" : phase === "question" ? "#f59e0b" : "#10b981",
+              }}>
+                {phase === "number" ? "READY" : phase === "question" ? "LIVE" : "ANSWER"}
+              </span>
+              {remaining > 0 && <span style={{ fontFamily:"'Bebas Neue'", fontSize:"18px", color: remaining<=10 ? C.red : C.textMuted }}>⏱{remaining}s</span>}
             </div>
 
-            {/* Buzzer controls */}
-            {(phase === "question") && q.type !== "minute_quiz" && q.type !== "wager" && (
-              <div style={{ display:"flex", gap:"8px" }}>
-                {!state.buzzerOpen && !state.buzzerWinner && btn("🔓 Open Buzzers", "#059669", () => updateGame({ buzzerOpen:true }))}
-                {state.buzzerOpen && !state.buzzerWinner && btn("🔒 Lock Buzzers", C.red, () => updateGame({ buzzerOpen:false }))}
-                {state.buzzerWinner && btn("🔄 Reset Buzzers", "#6366f1", () => updateGame({ buzzerOpen:false, buzzerWinner:null, buzzerTimeIrving:0, buzzerTimeMarshall:0 }))}
+            {/* Buzzer winner display */}
+            {state.buzzerWinner && (
+              <div style={{ textAlign:"center", padding:"6px", background: state.buzzerWinner==="irving" ? C.irvRed+"22" : C.marBlue+"22", borderRadius:"8px", border:`1px solid ${state.buzzerWinner==="irving" ? C.irvRed : C.marBlue}44` }}>
+                <span style={{ fontSize:"14px", fontWeight:700, color: state.buzzerWinner==="irving" ? C.irvRed : C.marBlue }}>
+                  🔔 {state.buzzerWinner.toUpperCase()} BUZZED IN
+                </span>
               </div>
             )}
 
@@ -1944,18 +1948,9 @@ function ScorekeeperView({ state }) {
                   </div>
                 )}
 
-                {/* Pop-up reveal */}
+                {/* Pop-up status */}
                 {q.type === "pop_up" && (
-                  <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
-                    <span style={{ fontSize:"11px", opacity:0.4 }}>Reveal:</span>
-                    {q.parts.map((p,i) => (
-                      <button key={i} onClick={() => updateGame({ popUpRevealed: i+1 })} style={{
-                        padding:"6px 10px", borderRadius:"8px", fontSize:"11px", fontWeight:700,
-                        background: i < state.popUpRevealed ? C.green+"33" : "#222", color:"white",
-                        border: i < state.popUpRevealed ? `1px solid ${C.green}` : "1px solid #333",
-                      }}>{i+1}</button>
-                    ))}
-                  </div>
+                  <div style={{ fontSize:"11px", opacity:0.4 }}>Pop-up parts revealed: {state.popUpRevealed}/{q.parts.length} (host controls)</div>
                 )}
 
                 {/* Award / Wrong buttons */}
@@ -2098,14 +2093,6 @@ function ScorekeeperView({ state }) {
                     updateGame({ scores: { ...state.scores, [team]: state.scores[team] + state.minuteQuizCorrect }});
                   }
                 )}
-              </div>
-            )}
-
-            {/* Timer controls */}
-            {q.type !== "minute_quiz" && phase === "question" && (
-              <div style={{ display:"flex", gap:"6px" }}>
-                {[15,30,60].map(s => sm(`${s}s`, "#222", () => updateGame({ timerEnd: Date.now() + s*1000, timerPaused:0 }), { flex:1, border:"1px solid #333" }))}
-                {remaining > 0 && sm("Clear", C.red+"aa", () => updateGame({ timerEnd:0, timerPaused:0 }), { flex:1 })}
               </div>
             )}
 
