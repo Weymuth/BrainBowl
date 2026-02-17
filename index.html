@@ -1395,7 +1395,7 @@ function HostView({ state }) {
       </div>
 
       {/* Main */}
-      <div style={{ flex:1, display:"flex", flexDirection:"column", padding:"20px 28px", gap:"16px", justifyContent:"center" }}>
+      <div style={{ flex:1, display:"flex", flexDirection:"column", padding:"20px 28px", gap:"16px", justifyContent: state.gamePhase === "playing" ? "flex-start" : "center", overflow:"hidden" }}>
         {(state.gamePhase === "title" || state.gamePhase.startsWith("intro")) && (
           <div style={{ textAlign:"center" }}>
             <div style={{ fontFamily:"'Bebas Neue'", fontSize:"48px", letterSpacing:"6px" }}>BRAIN BOWL</div>
@@ -1414,6 +1414,8 @@ function HostView({ state }) {
 
         {state.gamePhase === "playing" && q && (
           <>
+            {/* Scrollable info area */}
+            <div style={{ flex:1, overflowY:"auto", display:"flex", flexDirection:"column", gap:"16px" }}>
             <div style={{ display:"flex", alignItems:"center", gap:"10px" }}>
               <TypeBadge type={q.type} subject={q?.subject} />
               <span style={{ fontSize:"13px", opacity:0.4 }}>
@@ -1475,33 +1477,7 @@ function HostView({ state }) {
               </div>
             )}
 
-            <div style={{ display:"flex", gap:"8px" }}>
-              {phase === "number" && ctrl("Show Question →", "#6366f1", () => {
-                const tl = getTimeLimit(q);
-                updateGame({ questionPhase:"question", timerEnd: tl > 0 ? Date.now() + tl * 1000 : 0 });
-              })}
-              {phase === "question" && q.type !== "minute_quiz" && ctrl("Reveal Answer →", C.green, () => updateGame({ questionPhase:"answer" }))}
-              {phase === "answer" && ctrl("Next Question →", "#6366f1", () => {
-                const next = state.currentQuestion + 1;
-                if (next >= QUESTIONS.length) updateGame({ gamePhase:"finished" });
-                else if (next === HALFTIME_AFTER && !state.halftimeDone) updateGame({ gamePhase:"halftime", halftimeDone:true });
-                else updateGame({ currentQuestion:next, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0, buzzerOpen:false, buzzerWinner:null, buzzerTimeIrving:0, buzzerTimeMarshall:0, teamAnswerIrving:"", teamAnswerMarshall:"", wagerLockedIrving:false, wagerLockedMarshall:false, estimateIrving:"", estimateMarshall:"", estimateLockedIrving:false, estimateLockedMarshall:false, feudRevealed:[], wrongTeam:null, countdownValue:0 });
-              })}
-              {phase === "answer" && q.type === "face_off" && state.faceOffIndex < q.subQuestions.length-1 && (
-                ctrl(`Next Face-Off (${state.faceOffIndex+2}/${q.subQuestions.length})`, C.amber, () => updateGame({ faceOffIndex: state.faceOffIndex+1, questionPhase:"question", buzzerOpen:false, buzzerWinner:null, teamAnswerIrving:"", teamAnswerMarshall:"" }))
-              )}
-            </div>
-
-            {/* Buzzer controls — host controls buzzers */}
-            {phase === "question" && q.type !== "minute_quiz" && q.type !== "wager" && q.type !== "all_play" && q.type !== "spelling" && q.type !== "estimation" && q.type !== "this_or_that" && q.type !== "order" && q.type !== "pop_up" && (
-              <div style={{ display:"flex", gap:"8px" }}>
-                {!state.buzzerOpen && !state.buzzerWinner && ctrl("🔓 Open Buzzers", "#059669", () => updateGame({ buzzerOpen:true }))}
-                {state.buzzerOpen && !state.buzzerWinner && ctrl("🔒 Lock Buzzers", C.red, () => updateGame({ buzzerOpen:false }))}
-                {state.buzzerWinner && ctrl("🔄 Reset Buzzers", "#6366f1", () => updateGame({ buzzerOpen:false, buzzerWinner:null, buzzerTimeIrving:0, buzzerTimeMarshall:0 }))}
-              </div>
-            )}
-
-            {/* Pop-up reveal controls — host reveals parts */}
+            {/* Pop-up reveal controls */}
             {q.type === "pop_up" && phase === "question" && (
               <div style={{ display:"flex", gap:"6px", alignItems:"center" }}>
                 <span style={{ fontSize:"12px", opacity:0.4 }}>Reveal parts:</span>
@@ -1515,7 +1491,7 @@ function HostView({ state }) {
               </div>
             )}
 
-            {/* Feud reveal controls — host reveals individual answers */}
+            {/* Feud reveal controls */}
             {q.type === "feud" && phase === "question" && (
               <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
                 <span style={{ fontSize:"12px", opacity:0.4 }}>Reveal answers:</span>
@@ -1545,23 +1521,54 @@ function HostView({ state }) {
                 <div style={{ fontSize:"13px", opacity:0.6 }}>🎤 Call on audience members — award points to their team's side</div>
               </div>
             )}
+            </div>
 
-            {/* Minute Quiz host controls */}
-            {q.type === "minute_quiz" && phase === "question" && (
+            {/* ═══ PINNED BOTTOM CONTROLS — always in same position ═══ */}
+            <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:"12px", display:"flex", flexDirection:"column", gap:"8px", flexShrink:0 }}>
+              {/* Main flow buttons */}
               <div style={{ display:"flex", gap:"8px" }}>
-                {ctrl("✓ Correct", "#059669", () => {
-                  const nextIdx = state.minuteQuizIndex + 1;
-                  if (nextIdx >= q.subQuestions.length) updateGame({ minuteQuizCorrect: state.minuteQuizCorrect+1, questionPhase:"answer", timerEnd:0 });
-                  else updateGame({ minuteQuizCorrect: state.minuteQuizCorrect+1, minuteQuizIndex: nextIdx });
+                {phase === "number" && ctrl("Show Question →", "#6366f1", () => {
+                  const tl = getTimeLimit(q);
+                  updateGame({ questionPhase:"question", timerEnd: tl > 0 ? Date.now() + tl * 1000 : 0 });
                 })}
-                {ctrl("✗ Skip", "#dc2626", () => {
-                  const nextIdx = state.minuteQuizIndex + 1;
-                  if (nextIdx >= q.subQuestions.length) updateGame({ questionPhase:"answer", timerEnd:0 });
-                  else updateGame({ minuteQuizIndex: nextIdx });
+                {phase === "question" && q.type !== "minute_quiz" && ctrl("Reveal Answer →", C.green, () => updateGame({ questionPhase:"answer" }))}
+                {phase === "answer" && ctrl("Next Question →", "#6366f1", () => {
+                  const next = state.currentQuestion + 1;
+                  if (next >= QUESTIONS.length) updateGame({ gamePhase:"finished" });
+                  else if (next === HALFTIME_AFTER && !state.halftimeDone) updateGame({ gamePhase:"halftime", halftimeDone:true });
+                  else updateGame({ currentQuestion:next, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0, buzzerOpen:false, buzzerWinner:null, buzzerTimeIrving:0, buzzerTimeMarshall:0, teamAnswerIrving:"", teamAnswerMarshall:"", wagerLockedIrving:false, wagerLockedMarshall:false, estimateIrving:"", estimateMarshall:"", estimateLockedIrving:false, estimateLockedMarshall:false, feudRevealed:[], wrongTeam:null, countdownValue:0 });
                 })}
-                {ctrl("⏹ End Quiz", "#6366f1", () => updateGame({ questionPhase:"answer", timerEnd:0 }))}
+                {phase === "answer" && q.type === "face_off" && state.faceOffIndex < q.subQuestions.length-1 && (
+                  ctrl(`Next Face-Off (${state.faceOffIndex+2}/${q.subQuestions.length})`, C.amber, () => updateGame({ faceOffIndex: state.faceOffIndex+1, questionPhase:"question", buzzerOpen:false, buzzerWinner:null, teamAnswerIrving:"", teamAnswerMarshall:"" }))
+                )}
               </div>
-            )}
+
+              {/* Buzzer controls */}
+              {phase === "question" && q.type !== "minute_quiz" && q.type !== "wager" && q.type !== "all_play" && q.type !== "spelling" && q.type !== "estimation" && q.type !== "this_or_that" && q.type !== "order" && q.type !== "pop_up" && (
+                <div style={{ display:"flex", gap:"8px" }}>
+                  {!state.buzzerOpen && !state.buzzerWinner && ctrl("🔓 Open Buzzers", "#059669", () => updateGame({ buzzerOpen:true }))}
+                  {state.buzzerOpen && !state.buzzerWinner && ctrl("🔒 Lock Buzzers", C.red, () => updateGame({ buzzerOpen:false }))}
+                  {state.buzzerWinner && ctrl("🔄 Reset Buzzers", "#6366f1", () => updateGame({ buzzerOpen:false, buzzerWinner:null, buzzerTimeIrving:0, buzzerTimeMarshall:0 }))}
+                </div>
+              )}
+
+              {/* Minute Quiz controls */}
+              {q.type === "minute_quiz" && phase === "question" && (
+                <div style={{ display:"flex", gap:"8px" }}>
+                  {ctrl("✓ Correct", "#059669", () => {
+                    const nextIdx = state.minuteQuizIndex + 1;
+                    if (nextIdx >= q.subQuestions.length) updateGame({ minuteQuizCorrect: state.minuteQuizCorrect+1, questionPhase:"answer", timerEnd:0 });
+                    else updateGame({ minuteQuizCorrect: state.minuteQuizCorrect+1, minuteQuizIndex: nextIdx });
+                  })}
+                  {ctrl("✗ Skip", "#dc2626", () => {
+                    const nextIdx = state.minuteQuizIndex + 1;
+                    if (nextIdx >= q.subQuestions.length) updateGame({ questionPhase:"answer", timerEnd:0 });
+                    else updateGame({ minuteQuizIndex: nextIdx });
+                  })}
+                  {ctrl("⏹ End Quiz", "#6366f1", () => updateGame({ questionPhase:"answer", timerEnd:0 }))}
+                </div>
+              )}
+            </div>
           </>
         )}
 
