@@ -180,12 +180,17 @@ function App() {
 
   const parseQuestions = () => {
     try {
-      // Try to extract the array from various formats
       let text = importText.trim();
       // Remove "const QUESTIONS = " prefix if present
       text = text.replace(/^(const|let|var)\s+\w+\s*=\s*/, '');
       // Remove trailing semicolon
       text = text.replace(/;\s*$/, '');
+      // Strip single-line comments (// ...)
+      text = text.replace(/\/\/[^\n]*/g, '');
+      // Strip multi-line comments (/* ... */)
+      text = text.replace(/\/\*[\s\S]*?\*\//g, '');
+      // Remove trailing commas before ] or }
+      text = text.replace(/,\s*([}\]])/g, '$1');
       const parsed = eval('(' + text + ')');
       if (Array.isArray(parsed) && parsed.length > 0) {
         setQuestions(parsed);
