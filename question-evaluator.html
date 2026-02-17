@@ -181,31 +181,57 @@ function App() {
   const parseQuestions = () => {
     try {
       let text = importText.trim();
-      // Remove "const QUESTIONS = " prefix if present
+      if (!text) { alert('Paste your questions first!'); return; }
+      // Remove "const QUESTIONS = " or similar prefix
       text = text.replace(/^(const|let|var)\s+\w+\s*=\s*/, '');
       // Remove trailing semicolon
       text = text.replace(/;\s*$/, '');
-      // Use Function constructor — handles JS comments, trailing commas, unquoted keys natively
-      const parsed = new Function('return ' + text)();
+
+      let parsed;
+      // Strategy 1: new Function (handles JS comments + trailing commas)
+      try {
+        parsed = new Function('return ' + text)();
+      } catch(e1) {
+        // Strategy 2: strip comments line by line (respecting strings), then retry
+        try {
+          let clean = text.split('\n').map(function(line) {
+            var inStr = false, strChar = '', result = '';
+            for (var i = 0; i < line.length; i++) {
+              var ch = line[i], prev = i > 0 ? line[i-1] : '';
+              if (inStr) {
+                result += ch;
+                if (ch === strChar && prev !== '\\') inStr = false;
+              } else {
+                if (ch === '"' || ch === "'") { inStr = true; strChar = ch; result += ch; }
+                else if (ch === '/' && line[i+1] === '/') break;
+                else result += ch;
+              }
+            }
+            return result;
+          }).join('\n');
+          parsed = new Function('return ' + clean)();
+        } catch(e2) {
+          throw new Error(e1.message + ' (also tried stripping comments: ' + e2.message + ')');
+        }
+      }
+
       if (Array.isArray(parsed) && parsed.length > 0) {
         setQuestions(parsed);
         setImported(true);
-        // Load any matching saved evaluations
-        const saved = localStorage.getItem('bb-evaluations');
-        if (saved) {
-          const existing = JSON.parse(saved);
-          // Merge: keep existing evals for questions that exist in new set
-          const merged = {};
-          parsed.forEach(q => {
-            if (existing[q.id]) merged[q.id] = existing[q.id];
-          });
-          setEvaluations(merged);
-        }
+        try {
+          var saved = localStorage.getItem('bb-evaluations');
+          if (saved) {
+            var existing = JSON.parse(saved);
+            var merged = {};
+            parsed.forEach(function(q) { if (existing[q.id]) merged[q.id] = existing[q.id]; });
+            setEvaluations(merged);
+          }
+        } catch(le) {}
       } else {
-        alert('Could not parse questions. Make sure it\'s a valid JavaScript array.');
+        alert('No questions found. Make sure you pasted a JavaScript array starting with [');
       }
     } catch(e) {
-      alert('Parse error: ' + e.message + '\n\nTip: Make sure you\'re pasting a valid JavaScript array starting with [ and ending with ]');
+      alert('Parse error: ' + e.message);
     }
   };
 
