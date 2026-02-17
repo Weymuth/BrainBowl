@@ -2038,39 +2038,23 @@ function ScorekeeperView({ state }) {
               </>
             )}
 
-            {/* Minute Quiz controls */}
-            {q.type === "minute_quiz" && phase === "question" && (
+            {/* Minute Quiz — scorekeeper just picks team and awards points */}
+            {q.type === "minute_quiz" && (
               <>
                 <div style={{ display:"flex", gap:"8px", marginBottom:"4px" }}>
                   <div style={{ flex:1 }}>
-                    <label style={{ fontSize:"10px", opacity:0.4 }}>TEAM:</label>
+                    <label style={{ fontSize:"10px", opacity:0.4 }}>MINUTE QUIZ TEAM:</label>
                     <div style={{ display:"flex", gap:"4px", marginTop:"2px" }}>
                       {sm("Irving", state.minuteQuizTeam==="irving" ? C.irvRed : "#222", () => updateGame({ minuteQuizTeam:"irving" }), { flex:1, border:`1px solid ${state.minuteQuizTeam==="irving" ? C.irvRed : "#333"}` })}
                       {sm("Marshall", state.minuteQuizTeam==="marshall" ? C.marBlue : "#222", () => updateGame({ minuteQuizTeam:"marshall" }), { flex:1, border:`1px solid ${state.minuteQuizTeam==="marshall" ? C.marBlue : "#333"}` })}
                     </div>
                   </div>
                 </div>
-                <div style={{ display:"flex", gap:"8px" }}>
-                  {btn("✓ Correct", "#059669", () => {
-                    const nextIdx = state.minuteQuizIndex + 1;
-                    if (nextIdx >= q.subQuestions.length) updateGame({ minuteQuizCorrect: state.minuteQuizCorrect+1, questionPhase:"answer", timerEnd:0 });
-                    else updateGame({ minuteQuizCorrect: state.minuteQuizCorrect+1, minuteQuizIndex: nextIdx });
-                  })}
-                  {btn("✗ Skip", "#dc2626", () => {
-                    const nextIdx = state.minuteQuizIndex + 1;
-                    if (nextIdx >= q.subQuestions.length) updateGame({ questionPhase:"answer", timerEnd:0 });
-                    else updateGame({ minuteQuizIndex: nextIdx });
-                  })}
-                </div>
-                <div style={{ display:"flex", gap:"8px" }}>
-                  {btn(remaining > 0 ? `⏸ Pause (${remaining}s)` : state.timerPaused ? "▶ Resume" : "⏹ Timer ended", remaining > 0 ? "#dc2626" : state.timerPaused ? C.green : "#333",
-                    () => {
-                      if (remaining > 0) updateGame({ timerEnd: 0, timerPaused: remaining * 1000 });
-                      else if (state.timerPaused) updateGame({ timerEnd: Date.now() + state.timerPaused, timerPaused: 0 });
-                    }
-                  )}
-                  {btn("⏹ End Quiz", "#6366f1", () => updateGame({ questionPhase:"answer", timerEnd:0 }))}
-                </div>
+                {phase === "question" && (
+                  <div style={{ textAlign:"center", padding:"8px", opacity:0.4, fontSize:"12px" }}>
+                    Host running quiz — {state.minuteQuizCorrect} correct so far • {remaining > 0 ? `${remaining}s left` : "timer ended"}
+                  </div>
+                )}
                 {state.minuteQuizCorrect > 0 && (
                   <div style={{ display:"flex", gap:"8px" }}>
                     {btn(`Award ${state.minuteQuizCorrect} pts to ${state.minuteQuizTeam === "irving" ? "Irving" : "Marshall"}`,
@@ -2084,17 +2068,6 @@ function ScorekeeperView({ state }) {
                 )}
               </>
             )}
-            {q.type === "minute_quiz" && phase === "answer" && state.minuteQuizCorrect > 0 && (
-              <div style={{ display:"flex", gap:"8px" }}>
-                {btn(`Award ${state.minuteQuizCorrect} pts to ${state.minuteQuizTeam === "irving" ? "Irving" : "Marshall"}`,
-                  state.minuteQuizTeam === "irving" ? C.irvRed : C.marBlue,
-                  () => {
-                    const team = state.minuteQuizTeam;
-                    updateGame({ scores: { ...state.scores, [team]: state.scores[team] + state.minuteQuizCorrect }});
-                  }
-                )}
-              </div>
-            )}
 
             {/* Manual adjust */}
             <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:"8px", marginTop:"4px" }}>
@@ -2107,12 +2080,6 @@ function ScorekeeperView({ state }) {
               </div>
             </div>
 
-            {/* Nav */}
-            <div style={{ display:"flex", gap:"6px", marginTop:"4px" }}>
-              {sm("⏭ Skip", "#333", nextQ, { flex:1 })}
-              {sm("⏸ Halftime", "#4a1d7a", () => updateGame({ gamePhase:"halftime", halftimeDone:true }), { flex:1 })}
-              {sm("🏁 End Game", "#7f1d1d", () => updateGame({ gamePhase:"finished", timerEnd:0 }), { flex:1 })}
-            </div>
           </>
         )}
 
