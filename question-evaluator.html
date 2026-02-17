@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧠 Brain Bowl — Question Evaluator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Outfit',sans-serif; background:#0a0a12; color:#e8e8f0; min-height:100vh; }
+
+  .app { max-width:900px; margin:0 auto; padding:24px; }
+
+  /* Header */
+  .header { text-align:center; padding:32px 0 24px; border-bottom:1px solid #1a1a2e; margin-bottom:24px; }
+  .header h1 { font-family:'Bebas Neue'; font-size:42px; letter-spacing:6px; background:linear-gradient(135deg,#6366f1,#38bdf8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .header p { opacity:0.4; font-size:14px; margin-top:4px; }
+
+  /* Import Area */
+  .import-area { margin-bottom:24px; }
+  .import-area textarea {
+    width:100%; height:200px; background:#111; border:2px dashed #333; border-radius:12px;
+    color:#e8e8f0; font-family:'Courier New',monospace; font-size:13px; padding:16px; resize:vertical;
+    transition:border-color 0.3s;
+  }
+  .import-area textarea:focus { outline:none; border-color:#6366f1; }
+  .import-area textarea::placeholder { color:#555; }
+  .btn-row { display:flex; gap:8px; margin-top:12px; }
+  .btn {
+    padding:12px 24px; border:none; border-radius:8px; font-family:'Outfit'; font-weight:700;
+    font-size:14px; cursor:pointer; transition:all 0.2s; flex:1; color:white;
+  }
+  .btn:hover { transform:translateY(-1px); filter:brightness(1.2); }
+  .btn-purple { background:#6366f1; }
+  .btn-green { background:#10b981; }
+  .btn-amber { background:#f59e0b; }
+  .btn-red { background:#ef4444; }
+  .btn-gray { background:#333; }
+  .btn-blue { background:#38bdf8; }
+  .btn-sm { padding:8px 16px; font-size:12px; flex:none; }
+
+  /* Stats Bar */
+  .stats-bar {
+    display:flex; gap:12px; padding:16px; background:#111; border-radius:12px; margin-bottom:20px;
+    border:1px solid #1a1a2e;
+  }
+  .stat { flex:1; text-align:center; }
+  .stat-num { font-family:'Bebas Neue'; font-size:32px; line-height:1; }
+  .stat-label { font-size:10px; letter-spacing:2px; opacity:0.4; margin-top:4px; }
+  .stat-keep .stat-num { color:#10b981; }
+  .stat-harder .stat-num { color:#f59e0b; }
+  .stat-skip .stat-num { color:#ef4444; }
+  .stat-pending .stat-num { color:#6366f1; }
+
+  /* Filter Bar */
+  .filter-bar { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  .filter-btn {
+    padding:6px 14px; border:1px solid #333; border-radius:20px; background:transparent;
+    color:#888; font-family:'Outfit'; font-size:12px; font-weight:600; cursor:pointer;
+    transition:all 0.2s;
+  }
+  .filter-btn.active { border-color:currentColor; background:currentColor; color:#0a0a12 !important; }
+  .filter-btn:hover { border-color:#666; color:#ccc; }
+
+  /* Question Card */
+  .q-card {
+    background:#0f0f1a; border:1px solid #1a1a2e; border-radius:16px; padding:24px;
+    margin-bottom:16px; transition:all 0.3s; position:relative; overflow:hidden;
+  }
+  .q-card.evaluated { opacity:0.7; }
+  .q-card.evaluated:hover { opacity:1; }
+  .q-card.status-keep { border-left:4px solid #10b981; }
+  .q-card.status-harder { border-left:4px solid #f59e0b; }
+  .q-card.status-skip { border-left:4px solid #ef4444; }
+
+  .q-header { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .q-num { font-family:'Bebas Neue'; font-size:24px; color:#6366f1; width:36px; }
+  .q-type-badge {
+    display:inline-block; padding:3px 12px; border-radius:20px; font-size:10px;
+    font-weight:700; letter-spacing:2px;
+  }
+  .q-points { font-size:11px; opacity:0.3; margin-left:auto; }
+
+  .q-question { font-size:18px; font-weight:600; line-height:1.5; margin-bottom:8px; }
+  .q-answer { font-size:16px; color:#10b981; font-weight:700; margin-bottom:4px; }
+  .q-meta { font-size:12px; opacity:0.3; margin-bottom:16px; }
+
+  /* Sub-items (face-off rounds, feud answers, minute quiz, etc) */
+  .q-sub { padding:8px 12px; background:#ffffff06; border-radius:8px; margin:4px 0; font-size:13px; }
+  .q-sub-label { opacity:0.4; font-size:10px; letter-spacing:1px; margin-bottom:4px; }
+
+  /* Action buttons */
+  .q-actions { display:flex; gap:8px; margin-top:16px; }
+  .q-actions .btn { flex:1; }
+
+  /* Notes input */
+  .q-notes {
+    width:100%; margin-top:10px; padding:8px 12px; background:#111; border:1px solid #222;
+    border-radius:8px; color:#e8e8f0; font-family:'Outfit'; font-size:13px; resize:none; height:36px;
+  }
+  .q-notes:focus { outline:none; border-color:#6366f1; }
+  .q-notes::placeholder { color:#444; }
+
+  /* Status badge */
+  .q-status {
+    position:absolute; top:16px; right:16px; padding:4px 12px; border-radius:12px;
+    font-size:11px; font-weight:700; letter-spacing:1px;
+  }
+  .q-status-keep { background:#10b98122; color:#10b981; }
+  .q-status-harder { background:#f59e0b22; color:#f59e0b; }
+  .q-status-skip { background:#ef444422; color:#ef4444; }
+
+  /* Export area */
+  .export-area { margin-top:24px; padding:24px; background:#111; border-radius:12px; border:1px solid #1a1a2e; }
+  .export-area h3 { font-family:'Bebas Neue'; font-size:24px; letter-spacing:3px; margin-bottom:12px; }
+  .export-text {
+    width:100%; height:300px; background:#0a0a12; border:1px solid #222; border-radius:8px;
+    color:#e8e8f0; font-family:'Courier New',monospace; font-size:12px; padding:12px;
+  }
+
+  /* Empty state */
+  .empty { text-align:center; padding:60px 20px; opacity:0.3; }
+  .empty-icon { font-size:48px; margin-bottom:12px; }
+
+  /* Type colors */
+  .type-regular { background:#6366f122; color:#6366f1; border:1px solid #6366f144; }
+  .type-spelling { background:#ec489922; color:#ec4899; border:1px solid #ec489944; }
+  .type-face_off { background:#f59e0b22; color:#f59e0b; border:1px solid #f59e0b44; }
+  .type-pop_up { background:#06b6d422; color:#06b6d4; border:1px solid #06b6d444; }
+  .type-all_play { background:#10b98122; color:#10b981; border:1px solid #10b98144; }
+  .type-wager { background:#8b5cf622; color:#8b5cf6; border:1px solid #8b5cf644; }
+  .type-minute_quiz { background:#ef444422; color:#ef4444; border:1px solid #ef444444; }
+  .type-order { background:#f9731622; color:#f97316; border:1px solid #f9731644; }
+  .type-estimation { background:#14b8a622; color:#14b8a6; border:1px solid #14b8a644; }
+  .type-this_or_that { background:#e879f922; color:#e879f9; border:1px solid #e879f944; }
+  .type-feud { background:#fb923c22; color:#fb923c; border:1px solid #fb923c44; }
+  .type-audience { background:#38bdf822; color:#38bdf8; border:1px solid #38bdf844; }
+
+  @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .q-card { animation: fadeIn 0.3s ease; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const TYPE_LABELS = {
+  regular:"GENERAL KNOWLEDGE", spelling:"SPELLING", face_off:"FACE OFF", pop_up:"POP UP",
+  all_play:"ALL PLAY", wager:"WAGER", minute_quiz:"MINUTE QUIZ", order:"PUT IN ORDER",
+  estimation:"ESTIMATION", this_or_that:"THIS OR THAT", feud:"TOP ANSWERS", audience:"AUDIENCE PLAY"
+};
+
+function App() {
+  const [questions, setQuestions] = useState([]);
+  const [evaluations, setEvaluations] = useState({}); // { id: { status: 'keep'|'harder'|'skip', notes: '' } }
+  const [importText, setImportText] = useState('');
+  const [filter, setFilter] = useState('all'); // all, pending, keep, harder, skip
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [showExport, setShowExport] = useState(false);
+  const [imported, setImported] = useState(false);
+
+  // Try to load saved evaluations from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('bb-evaluations');
+      if (saved) setEvaluations(JSON.parse(saved));
+    } catch(e) {}
+  }, []);
+
+  // Save evaluations whenever they change
+  useEffect(() => {
+    if (Object.keys(evaluations).length > 0) {
+      localStorage.setItem('bb-evaluations', JSON.stringify(evaluations));
+    }
+  }, [evaluations]);
+
+  const parseQuestions = () => {
+    try {
+      // Try to extract the array from various formats
+      let text = importText.trim();
+      // Remove "const QUESTIONS = " prefix if present
+      text = text.replace(/^(const|let|var)\s+\w+\s*=\s*/, '');
+      // Remove trailing semicolon
+      text = text.replace(/;\s*$/, '');
+      const parsed = eval('(' + text + ')');
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        setQuestions(parsed);
+        setImported(true);
+        // Load any matching saved evaluations
+        const saved = localStorage.getItem('bb-evaluations');
+        if (saved) {
+          const existing = JSON.parse(saved);
+          // Merge: keep existing evals for questions that exist in new set
+          const merged = {};
+          parsed.forEach(q => {
+            if (existing[q.id]) merged[q.id] = existing[q.id];
+          });
+          setEvaluations(merged);
+        }
+      } else {
+        alert('Could not parse questions. Make sure it\'s a valid JavaScript array.');
+      }
+    } catch(e) {
+      alert('Parse error: ' + e.message);
+    }
+  };
+
+  const setStatus = (id, status) => {
+    setEvaluations(prev => ({
+      ...prev,
+      [id]: { ...prev[id], status, notes: prev[id]?.notes || '' }
+    }));
+  };
+
+  const setNotes = (id, notes) => {
+    setEvaluations(prev => ({
+      ...prev,
+      [id]: { ...prev[id], notes, status: prev[id]?.status || 'pending' }
+    }));
+  };
+
+  const clearStatus = (id) => {
+    setEvaluations(prev => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  };
+
+  // Stats
+  const stats = {
+    total: questions.length,
+    keep: questions.filter(q => evaluations[q.id]?.status === 'keep').length,
+    harder: questions.filter(q => evaluations[q.id]?.status === 'harder').length,
+    skip: questions.filter(q => evaluations[q.id]?.status === 'skip').length,
+  };
+  stats.pending = stats.total - stats.keep - stats.harder - stats.skip;
+
+  // Filter questions
+  const filtered = questions.filter(q => {
+    const ev = evaluations[q.id];
+    const statusMatch = filter === 'all' || (filter === 'pending' && !ev?.status) ||
+      (ev?.status === filter);
+    const typeMatch = typeFilter === 'all' || q.type === typeFilter;
+    return statusMatch && typeMatch;
+  });
+
+  // Unique types in current questions
+  const types = [...new Set(questions.map(q => q.type))];
+
+  // Export data
+  const getExportData = () => {
+    const data = {
+      exportDate: new Date().toISOString(),
+      summary: stats,
+      evaluations: questions.map(q => ({
+        id: q.id,
+        type: q.type,
+        subject: q.subject || null,
+        question: q.question || q.theme || '',
+        status: evaluations[q.id]?.status || 'pending',
+        notes: evaluations[q.id]?.notes || '',
+      }))
+    };
+    return JSON.stringify(data, null, 2);
+  };
+
+  // Export kept questions as JS array
+  const getKeptQuestionsJS = () => {
+    const kept = questions.filter(q => evaluations[q.id]?.status === 'keep');
+    return 'const APPROVED_QUESTIONS = ' + JSON.stringify(kept, null, 2) + ';';
+  };
+
+  // Render question details based on type
+  const renderDetails = (q) => {
+    if (q.type === 'face_off' && q.subQuestions) {
+      return (
+        <div>
+          <div className="q-sub-label">THEME: {q.theme}</div>
+          {q.subQuestions.map((sq, i) => (
+            <div key={i} className="q-sub">Round {i+1}: {sq.question} → <span style={{color:'#10b981'}}>{sq.answer}</span></div>
+          ))}
+        </div>
+      );
+    }
+    if (q.type === 'minute_quiz' && q.subQuestions) {
+      return (
+        <div>
+          {q.subQuestions.map((sq, i) => (
+            <div key={i} className="q-sub">#{i+1}: {sq.question} → <span style={{color:'#10b981'}}>{sq.answer}</span></div>
+          ))}
+        </div>
+      );
+    }
+    if (q.type === 'feud' && q.answers) {
+      return (
+        <div>
+          {q.answers.map((a, i) => (
+            <div key={i} className="q-sub">#{i+1} ({a.points}pts): {a.text}</div>
+          ))}
+        </div>
+      );
+    }
+    if (q.type === 'pop_up' && q.parts) {
+      return (
+        <div>
+          <div className="q-sub-label">CLUES ({q.parts.length}):</div>
+          {q.parts.map((p, i) => (
+            <div key={i} className="q-sub">Clue {i+1}: {p}</div>
+          ))}
+        </div>
+      );
+    }
+    if (q.type === 'order' && q.items) {
+      return <div className="q-sub">Items: {q.items.join(' • ')}</div>;
+    }
+    if (q.type === 'this_or_that') {
+      return <div className="q-sub">A: {q.optionA} &nbsp;|&nbsp; B: {q.optionB}</div>;
+    }
+    if (q.type === 'estimation') {
+      return <div className="q-sub">Exact: {q.exactAnswer}</div>;
+    }
+    return null;
+  };
+
+  // Import view
+  if (!imported) {
+    return (
+      <div className="app">
+        <div className="header">
+          <h1>BRAIN BOWL EVALUATOR</h1>
+          <p>Paste your QUESTIONS array below to start reviewing</p>
+        </div>
+        <div className="import-area">
+          <textarea
+            value={importText}
+            onChange={e => setImportText(e.target.value)}
+            placeholder={'Paste your QUESTIONS array here...\n\nExample:\nconst QUESTIONS = [\n  { id:1, type:"regular", points:1, subject:"Math", question:"...", answer:"..." },\n  ...\n];'}
+          />
+          <div className="btn-row">
+            <button className="btn btn-purple" onClick={parseQuestions}>📥 Import & Review</button>
+          </div>
+        </div>
+        <div className="empty">
+          <div className="empty-icon">📋</div>
+          <div>Paste your questions to get started</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Review view
+  return (
+    <div className="app">
+      <div className="header">
+        <h1>BRAIN BOWL EVALUATOR</h1>
+        <p>{questions.length} questions loaded • {stats.pending} pending review</p>
+      </div>
+
+      {/* Stats */}
+      <div className="stats-bar">
+        <div className="stat stat-keep">
+          <div className="stat-num">{stats.keep}</div>
+          <div className="stat-label">KEEP ✅</div>
+        </div>
+        <div className="stat stat-harder">
+          <div className="stat-num">{stats.harder}</div>
+          <div className="stat-label">HARDER 🔼</div>
+        </div>
+        <div className="stat stat-skip">
+          <div className="stat-num">{stats.skip}</div>
+          <div className="stat-label">SKIP ⏭</div>
+        </div>
+        <div className="stat stat-pending">
+          <div className="stat-num">{stats.pending}</div>
+          <div className="stat-label">PENDING</div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="filter-bar">
+        <button className={`filter-btn ${filter==='all'?'active':''}`} style={{color:'#e8e8f0'}} onClick={()=>setFilter('all')}>All ({stats.total})</button>
+        <button className={`filter-btn ${filter==='pending'?'active':''}`} style={{color:'#6366f1'}} onClick={()=>setFilter('pending')}>Pending ({stats.pending})</button>
+        <button className={`filter-btn ${filter==='keep'?'active':''}`} style={{color:'#10b981'}} onClick={()=>setFilter('keep')}>Keep ({stats.keep})</button>
+        <button className={`filter-btn ${filter==='harder'?'active':''}`} style={{color:'#f59e0b'}} onClick={()=>setFilter('harder')}>Harder ({stats.harder})</button>
+        <button className={`filter-btn ${filter==='skip'?'active':''}`} style={{color:'#ef4444'}} onClick={()=>setFilter('skip')}>Skip ({stats.skip})</button>
+      </div>
+      <div className="filter-bar">
+        <button className={`filter-btn ${typeFilter==='all'?'active':''}`} style={{color:'#e8e8f0'}} onClick={()=>setTypeFilter('all')}>All Types</button>
+        {types.map(t => (
+          <button key={t} className={`filter-btn ${typeFilter===t?'active':''}`}
+            style={{color: {'regular':'#6366f1','spelling':'#ec4899','face_off':'#f59e0b','pop_up':'#06b6d4','all_play':'#10b981','wager':'#8b5cf6','minute_quiz':'#ef4444','order':'#f97316','estimation':'#14b8a6','this_or_that':'#e879f9','feud':'#fb923c','audience':'#38bdf8'}[t] || '#888'}}
+            onClick={()=>setTypeFilter(t)}>
+            {TYPE_LABELS[t] || t} ({questions.filter(q=>q.type===t).length})
+          </button>
+        ))}
+      </div>
+
+      {/* Action bar */}
+      <div className="btn-row" style={{marginBottom:16}}>
+        <button className="btn btn-gray btn-sm" onClick={()=>{setImported(false);setImportText('');}}>📥 New Import</button>
+        <button className="btn btn-blue btn-sm" onClick={()=>setShowExport(!showExport)}>
+          {showExport ? '📋 Hide Export' : '📤 Export Results'}
+        </button>
+        <button className="btn btn-green btn-sm" onClick={() => {
+          const blob = new Blob([getExportData()], {type:'application/json'});
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = `brain-bowl-eval-${new Date().toISOString().slice(0,10)}.json`;
+          a.click(); URL.revokeObjectURL(url);
+        }}>💾 Download JSON</button>
+        <button className="btn btn-amber btn-sm" onClick={() => {
+          const blob = new Blob([getKeptQuestionsJS()], {type:'text/javascript'});
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = `approved-questions-${new Date().toISOString().slice(0,10)}.js`;
+          a.click(); URL.revokeObjectURL(url);
+        }}>⬇ Download Kept Only</button>
+      </div>
+
+      {/* Export area */}
+      {showExport && (
+        <div className="export-area">
+          <h3>EVALUATION EXPORT</h3>
+          <div className="btn-row" style={{marginBottom:12}}>
+            <button className="btn btn-gray btn-sm" onClick={()=>{
+              navigator.clipboard.writeText(getExportData());
+            }}>📋 Copy Full Report</button>
+            <button className="btn btn-green btn-sm" onClick={()=>{
+              navigator.clipboard.writeText(getKeptQuestionsJS());
+            }}>📋 Copy Kept Questions (JS)</button>
+          </div>
+          <textarea className="export-text" readOnly value={getExportData()} />
+        </div>
+      )}
+
+      {/* Question Cards */}
+      {filtered.length === 0 ? (
+        <div className="empty">
+          <div className="empty-icon">🎉</div>
+          <div>No questions match this filter</div>
+        </div>
+      ) : (
+        filtered.map(q => {
+          const ev = evaluations[q.id];
+          const status = ev?.status;
+          return (
+            <div key={q.id} className={`q-card ${status ? 'evaluated' : ''} ${status ? 'status-'+status : ''}`}>
+              {status && (
+                <div className={`q-status q-status-${status}`}>
+                  {status === 'keep' ? '✅ KEEP' : status === 'harder' ? '🔼 HARDER' : '⏭ SKIP'}
+                </div>
+              )}
+              <div className="q-header">
+                <div className="q-num">Q{q.id}</div>
+                <span className={`q-type-badge type-${q.type}`}>
+                  {TYPE_LABELS[q.type] || q.type}{q.type === 'regular' && q.subject ? `: ${q.subject.toUpperCase()}` : ''}
+                </span>
+                <span className="q-points">{q.type === 'feud' || q.type === 'wager' ? 'Variable' : q.points + ' pt' + (q.points !== 1 ? 's' : '')}</span>
+              </div>
+
+              <div className="q-question">{q.question || q.theme || '(see details)'}</div>
+              {q.answer && <div className="q-answer">✓ {q.answer}</div>}
+
+              {renderDetails(q)}
+
+              <div className="q-actions">
+                <button className={`btn ${status==='keep' ? 'btn-green' : 'btn-gray'}`}
+                  onClick={() => status==='keep' ? clearStatus(q.id) : setStatus(q.id, 'keep')}>
+                  ✅ Keep
+                </button>
+                <button className={`btn ${status==='harder' ? 'btn-amber' : 'btn-gray'}`}
+                  onClick={() => status==='harder' ? clearStatus(q.id) : setStatus(q.id, 'harder')}>
+                  🔼 Harder
+                </button>
+                <button className={`btn ${status==='skip' ? 'btn-red' : 'btn-gray'}`}
+                  onClick={() => status==='skip' ? clearStatus(q.id) : setStatus(q.id, 'skip')}>
+                  ⏭ Skip
+                </button>
+              </div>
+              <textarea
+                className="q-notes"
+                placeholder="Add notes... (e.g. 'too easy', 'change to science topic', 'great wager question')"
+                value={ev?.notes || ''}
+                onChange={e => setNotes(q.id, e.target.value)}
+              />
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
