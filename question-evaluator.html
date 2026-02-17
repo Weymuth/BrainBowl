@@ -186,13 +186,22 @@ function App() {
       text = text.replace(/^(const|let|var)\s+\w+\s*=\s*/, '');
       // Remove trailing semicolon
       text = text.replace(/;\s*$/, '');
+      // If text doesn't start with [, try to find the first [
+      if (!text.startsWith('[')) {
+        const idx = text.indexOf('[');
+        if (idx >= 0) text = text.substring(idx);
+      }
+      // If text doesn't end with ], try to find the last ]
+      if (!text.endsWith(']')) {
+        const idx = text.lastIndexOf(']');
+        if (idx >= 0) text = text.substring(0, idx + 1);
+      }
 
       let parsed;
-      // Strategy 1: new Function (handles JS comments + trailing commas)
       try {
         parsed = new Function('return ' + text)();
       } catch(e1) {
-        // Strategy 2: strip comments line by line (respecting strings), then retry
+        // Fallback: strip comments line by line respecting strings
         try {
           let clean = text.split('\n').map(function(line) {
             var inStr = false, strChar = '', result = '';
@@ -211,27 +220,37 @@ function App() {
           }).join('\n');
           parsed = new Function('return ' + clean)();
         } catch(e2) {
-          throw new Error(e1.message + ' (also tried stripping comments: ' + e2.message + ')');
+          alert('Parse error: ' + e1.message + '\n\nFirst 200 chars of input:\n' + text.substring(0, 200));
+          return;
         }
       }
 
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        setQuestions(parsed);
-        setImported(true);
-        try {
-          var saved = localStorage.getItem('bb-evaluations');
-          if (saved) {
-            var existing = JSON.parse(saved);
-            var merged = {};
-            parsed.forEach(function(q) { if (existing[q.id]) merged[q.id] = existing[q.id]; });
-            setEvaluations(merged);
-          }
-        } catch(le) {}
-      } else {
-        alert('No questions found. Make sure you pasted a JavaScript array starting with [');
+      if (!parsed) {
+        alert('Parser returned nothing. First 200 chars:\n' + text.substring(0, 200));
+        return;
       }
+      if (!Array.isArray(parsed)) {
+        alert('Parsed result is ' + typeof parsed + ', not an array. First 200 chars:\n' + text.substring(0, 200));
+        return;
+      }
+      if (parsed.length === 0) {
+        alert('Parsed an empty array. First 200 chars:\n' + text.substring(0, 200));
+        return;
+      }
+
+      setQuestions(parsed);
+      setImported(true);
+      try {
+        var saved = localStorage.getItem('bb-evaluations');
+        if (saved) {
+          var existing = JSON.parse(saved);
+          var merged = {};
+          parsed.forEach(function(q) { if (existing[q.id]) merged[q.id] = existing[q.id]; });
+          setEvaluations(merged);
+        }
+      } catch(le) {}
     } catch(e) {
-      alert('Parse error: ' + e.message);
+      alert('Unexpected error: ' + e.message);
     }
   };
 
@@ -369,6 +388,11 @@ function App() {
           />
           <div className="btn-row">
             <button className="btn btn-purple" onClick={parseQuestions}>📥 Import & Review</button>
+            <button className="btn btn-gray" onClick={() => {
+              const demo = [{id:1,type:"regular",points:1,subject:"Test",question:"Demo question?",answer:"Demo answer"},{id:2,type:"spelling",points:1,question:"Spell this.",answer:"T-E-S-T"}];
+              setQuestions(demo);
+              setImported(true);
+            }}>🧪 Test with Demo</button>
           </div>
         </div>
         <div className="empty">
