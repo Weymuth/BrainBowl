@@ -81,80 +81,115 @@ const IS_CONFIGURED = !FIREBASE_CONFIG.apiKey.includes("YOUR_");
 // ╚══════════════════════════════════════════════════════════════╝
 const QUESTIONS = [
   // ═══════════════════════════════════════════════════
-  // 🎮 DEMO QUESTIONS — For officer preview only
-  // These are throwaway questions — NOT for the event
+  // 🎮 DEMO — 40 questions, 20 per half, all 12 types
   // ═══════════════════════════════════════════════════
 
-  // 1: REGULAR — Standard buzzer question
-  { id:1, type:"regular", points:1, subject:"Art",
-    question:"What color do you get when you mix red and white?",
-    answer:"Pink" },
+  // ═══ FIRST HALF (Q1-Q20) ═══
 
-  // 2: REGULAR — Another buzzer (demo the steal mechanic here)
-  { id:2, type:"regular", points:1, subject:"Math",
-    question:"How many sides does a triangle have?",
-    answer:"Three" },
-
-  // 3: ALL PLAY — Both teams write answer on iPad canvas
-  { id:3, type:"all_play", points:1,
-    question:"What is the capital of Pennsylvania?",
-    answer:"Harrisburg" },
-
-  // 4: THIS OR THAT — Both teams pick A or B on iPad
-  { id:4, type:"this_or_that", points:1,
-    question:"Which is bigger?",
-    optionA:"An elephant", optionB:"A blue whale",
-    answer:"A blue whale" },
-
-  // 5: SPELLING — Teams write the spelling on iPad canvas
-  { id:5, type:"spelling", points:1,
-    question:"The study of stars and planets. Spell this word.",
-    answer:"A-S-T-R-O-N-O-M-Y" },
-
-  // 6: FACE OFF — 1v1, typewriter text reveal, buzzer auto-unlocks
-  { id:6, type:"face_off", points:1, theme:"Animals — Name the Sound They Make",
+  // 1-3: Warm up — buzzer
+  { id:1, type:"regular", points:1, subject:"Art", question:"What color do you get when you mix red and white?", answer:"Pink" },
+  { id:2, type:"regular", points:1, subject:"Math", question:"How many sides does a triangle have?", answer:"Three" },
+  { id:3, type:"regular", points:1, subject:"Science", question:"What planet is known as the Red Planet?", answer:"Mars" },
+  // 4: Crowd moment — all play
+  { id:4, type:"all_play", points:1, question:"What is the capital of Pennsylvania?", answer:"Harrisburg" },
+  // 5: This or That
+  { id:5, type:"this_or_that", points:1, question:"Which is bigger?", optionA:"An elephant", optionB:"A blue whale", answer:"A blue whale" },
+  // 6-7: Buzzer
+  { id:6, type:"regular", points:1, subject:"History", question:"Who was the first President of the United States?", answer:"George Washington" },
+  { id:7, type:"regular", points:1, subject:"Language", question:"What is the plural of 'goose'?", answer:"Geese" },
+  // 8: Spelling
+  { id:8, type:"spelling", points:1, question:"The study of stars and planets. Spell this word.", answer:"A-S-T-R-O-N-O-M-Y" },
+  // 9: Face Off
+  { id:9, type:"face_off", points:1, theme:"Animals — Name the Sound They Make",
     subQuestions: [
       { question:"Dog", answer:"Bark" },
       { question:"Cat", answer:"Meow" },
       { question:"Cow", answer:"Moo" },
     ]
   },
+  // 10-11: Buzzer
+  { id:10, type:"regular", points:1, subject:"Geography", question:"What is the largest ocean on Earth?", answer:"Pacific Ocean" },
+  { id:11, type:"regular", points:1, subject:"Pop Culture", question:"What wizard school does Harry Potter attend?", answer:"Hogwarts" },
+  // 12: This or That
+  { id:12, type:"this_or_that", points:1, question:"Which has more bones?", optionA:"A human adult", optionB:"A human baby", answer:"A human baby" },
+  // 13: Order
+  { id:13, type:"order", points:2, question:"Put these months in calendar order.", items:["March", "January", "April", "February"], answer:"January → February → March → April" },
+  // 14: Audience Play
+  { id:14, type:"audience", points:1, question:"What is the tallest mountain in the world?", answer:"Mount Everest" },
+  // 15-16: Buzzer
+  { id:15, type:"regular", points:1, subject:"Math", question:"What is 7 × 8?", answer:"56" },
+  { id:16, type:"regular", points:1, subject:"Science", question:"What gas do plants breathe in?", answer:"Carbon Dioxide" },
+  // 17: Estimation
+  { id:17, type:"estimation", points:2, question:"How many steps are there to the top of the Eiffel Tower?", answer:"1,665", exactAnswer:1665 },
+  // 18: Pop Up
+  { id:18, type:"pop_up", points:4, question:"Name the four seasons of the year.", parts:["Spring","Summer","Fall","Winter"], answer:"Spring, Summer, Fall, Winter" },
+  // 19: Feud
+  { id:19, type:"feud", points:0, question:"Name something students bring to school every day.",
+    answers: [
+      { text:"Backpack", points:5 },
+      { text:"Lunch", points:4 },
+      { text:"Phone", points:3 },
+      { text:"Pencil/Pen", points:2 },
+      { text:"Water Bottle", points:1 },
+    ]
+  },
+  // 20: Wager → HALFTIME
+  { id:20, type:"wager", points:0, question:"What is the most popular pizza topping in the United States?", answer:"Pepperoni" },
 
-  // 7: ORDER — Teams drag items into correct sequence on iPad
-  { id:7, type:"order", points:2,
-    question:"Put these months in calendar order.",
-    items:["March", "January", "April", "February"],
-    answer:"January → February → March → April" },
+  // ═══ HALFTIME ═══
 
-  // 8: THIS OR THAT — Another A/B choice
-  { id:8, type:"this_or_that", points:1,
-    question:"Which planet is closer to the Sun?",
-    optionA:"Earth", optionB:"Mars",
-    answer:"Earth" },
+  // ═══ SECOND HALF (Q21-Q40) ═══
 
-  // 9: ESTIMATION — Teams enter a number guess on iPad
-  { id:9, type:"estimation", points:2,
-    question:"How many steps are there to the top of the Eiffel Tower?",
-    answer:"1,665", exactAnswer:1665 },
-
-  // 10: POP UP — Parts revealed one at a time, teams write on iPad canvas
-  { id:10, type:"pop_up", points:4,
-    question:"Name the four seasons of the year.",
-    parts:["Spring","Summer","Fall","Winter"],
-    answer:"Spring, Summer, Fall, Winter" },
-
-  // 11: REGULAR — Quick buzzer before wager
-  { id:11, type:"regular", points:1, subject:"Geography",
-    question:"What is the largest ocean on Earth?",
-    answer:"Pacific Ocean" },
-
-  // 12: WAGER — Teams enter wager amount then write answer on iPad canvas
-  { id:12, type:"wager", points:0,
-    question:"What is the most popular pizza topping in the United States?",
-    answer:"Pepperoni" },
-
-  // 13: MINUTE QUIZ — 60-second rapid fire
-  { id:13, type:"minute_quiz", points:1, minuteQuizLabel:"Minute Quiz",
+  // 21-23: Reset energy — buzzer
+  { id:21, type:"regular", points:1, subject:"History", question:"What ship sank on its maiden voyage in 1912?", answer:"Titanic" },
+  { id:22, type:"regular", points:1, subject:"Geography", question:"What is the smallest continent?", answer:"Australia" },
+  { id:23, type:"regular", points:1, subject:"Science", question:"How many legs does a spider have?", answer:"Eight" },
+  // 24: Crowd back in — all play
+  { id:24, type:"all_play", points:1, question:"What color are the stars on the American flag?", answer:"White" },
+  // 25: Buzzer
+  { id:25, type:"regular", points:1, subject:"Math", question:"What is the square root of 144?", answer:"12" },
+  // 26: This or That
+  { id:26, type:"this_or_that", points:1, question:"Which planet is closer to the Sun?", optionA:"Earth", optionB:"Mars", answer:"Earth" },
+  // 27: Face Off
+  { id:27, type:"face_off", points:1, theme:"Colors — Name Something That Color",
+    subQuestions: [
+      { question:"Yellow", answer:"Banana (or Sun, etc.)" },
+      { question:"Red", answer:"Fire Truck (or Apple, etc.)" },
+      { question:"Blue", answer:"Sky (or Ocean, etc.)" },
+    ]
+  },
+  // 28: Spelling
+  { id:28, type:"spelling", points:1, question:"Relating to cooking or the kitchen. Spell this word.", answer:"C-U-L-I-N-A-R-Y" },
+  // 29-30: Buzzer
+  { id:29, type:"regular", points:1, subject:"Language", question:"What punctuation mark ends a question?", answer:"Question Mark" },
+  { id:30, type:"regular", points:1, subject:"Pop Culture", question:"What is the name of Mickey Mouse's dog?", answer:"Pluto" },
+  // 31: Order
+  { id:31, type:"order", points:2, question:"Put these numbers in order from smallest to largest.", items:["One Million", "One Thousand", "One Billion", "One Hundred"], answer:"One Hundred → One Thousand → One Million → One Billion" },
+  // 32: Audience Play
+  { id:32, type:"audience", points:1, question:"What is the fastest land animal?", answer:"Cheetah" },
+  // 33-34: Buzzer
+  { id:33, type:"regular", points:1, subject:"Science", question:"What is the chemical formula for water?", answer:"H₂O" },
+  { id:34, type:"regular", points:1, subject:"History", question:"In what year did World War II end?", answer:"1945" },
+  // 35: Estimation
+  { id:35, type:"estimation", points:2, question:"In what year was the first email ever sent?", answer:"1971", exactAnswer:1971 },
+  // 36: Pop Up
+  { id:36, type:"pop_up", points:3, question:"Name three primary colors.", parts:["Red","Blue","Yellow"], answer:"Red, Blue, Yellow" },
+  // 37: This or That
+  { id:37, type:"this_or_that", points:1, question:"Which is taller?", optionA:"The Statue of Liberty", optionB:"The Leaning Tower of Pisa", answer:"The Statue of Liberty" },
+  // 38: Feud
+  { id:38, type:"feud", points:0, question:"Name a flavor of ice cream.",
+    answers: [
+      { text:"Vanilla", points:5 },
+      { text:"Chocolate", points:4 },
+      { text:"Strawberry", points:3 },
+      { text:"Mint Chocolate Chip", points:2 },
+      { text:"Cookie Dough", points:1 },
+    ]
+  },
+  // 39: Wager — high stakes closer
+  { id:39, type:"wager", points:0, question:"What is the largest country in the world by area?", answer:"Russia" },
+  // 40: Minute Quiz — grand finale
+  { id:40, type:"minute_quiz", points:1, minuteQuizLabel:"Minute Quiz",
     subQuestions: [
       { question:"What color is the sky on a clear day?", answer:"Blue" },
       { question:"How many letters in the English alphabet?", answer:"26" },
@@ -170,7 +205,7 @@ const QUESTIONS = [
   },
 ];
 
-const HALFTIME_AFTER = 99; // no halftime in demo
+const HALFTIME_AFTER = 20; // halftime after question 20 (wager)
 
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  👥 TEAM ROSTERS — Edit player names here                  ║
@@ -194,12 +229,12 @@ const C = {
   amber: "#f59e0b", cyan: "#06b6d4", purple: "#8b5cf6",
 };
 
-const TYPE_COLORS = { regular:"#6366f1", spelling:"#ec4899", face_off:"#f59e0b", pop_up:"#06b6d4", all_play:"#10b981", wager:"#8b5cf6", minute_quiz:"#ef4444", order:"#f97316", estimation:"#14b8a6", this_or_that:"#e879f9" };
-const TYPE_LABELS = { regular:"GENERAL KNOWLEDGE", spelling:"SPELLING", face_off:"FACE OFF", pop_up:"POP UP", all_play:"ALL PLAY", wager:"WAGER", minute_quiz:"MINUTE QUIZ", order:"PUT IN ORDER", estimation:"ESTIMATION", this_or_that:"THIS OR THAT" };
+const TYPE_COLORS = { regular:"#6366f1", spelling:"#ec4899", face_off:"#f59e0b", pop_up:"#06b6d4", all_play:"#10b981", wager:"#8b5cf6", minute_quiz:"#ef4444", order:"#f97316", estimation:"#14b8a6", this_or_that:"#e879f9", feud:"#fb923c", audience:"#38bdf8" };
+const TYPE_LABELS = { regular:"GENERAL KNOWLEDGE", spelling:"SPELLING", face_off:"FACE OFF", pop_up:"POP UP", all_play:"ALL PLAY", wager:"WAGER", minute_quiz:"MINUTE QUIZ", order:"PUT IN ORDER", estimation:"ESTIMATION", this_or_that:"THIS OR THAT", feud:"TOP ANSWERS", audience:"AUDIENCE PLAY" };
 
 // Default time limits in seconds per question type (0 = no timer)
 // Individual questions can override with a timeLimit field
-const DEFAULT_TIMERS = { regular:15, spelling:30, face_off:0, pop_up:30, all_play:30, wager:45, minute_quiz:60, order:45, estimation:30, this_or_that:15 };
+const DEFAULT_TIMERS = { regular:15, spelling:30, face_off:0, pop_up:30, all_play:30, wager:45, minute_quiz:60, order:45, estimation:30, this_or_that:15, feud:0, audience:0 };
 function getTimeLimit(q) { return q.timeLimit !== undefined ? q.timeLimit : (DEFAULT_TIMERS[q.type] || 0); }
 
 // ╔══════════════════════════════════════════════════════════════╗
@@ -328,6 +363,8 @@ const DEFAULT_STATE = {
   estimateMarshall: "",
   estimateLockedIrving: false,
   estimateLockedMarshall: false,
+  // Feud
+  feudRevealed: [], // array of revealed answer indices
   // Streak tracking
   streak: 0,
   streakTeam: null,
@@ -723,6 +760,8 @@ function AudienceView({ state }) {
         {q.type === "estimation" && <div style={{ fontSize:"36px", opacity:0.5, marginTop:"12px", fontWeight:300 }}>Closest guess wins!</div>}
         {q.type === "order" && <div style={{ fontSize:"36px", opacity:0.5, marginTop:"12px", fontWeight:300 }}>Arrange in the correct order!</div>}
         {q.type === "this_or_that" && <div style={{ fontSize:"36px", opacity:0.5, marginTop:"12px", fontWeight:300 }}>Pick A or B — both teams play!</div>}
+        {q.type === "feud" && <div style={{ fontSize:"36px", opacity:0.5, marginTop:"12px", fontWeight:300 }}>Name the top answers!</div>}
+        {q.type === "audience" && <div style={{ fontSize:"36px", opacity:0.5, marginTop:"12px", fontWeight:300 }}>The audience plays! 🎤</div>}
       </div>
     );
 
@@ -762,6 +801,59 @@ function AudienceView({ state }) {
               🔔 {state.buzzerWinner === "irving" ? "IRVING" : "MARSHALL"} BUZZED IN!
             </div>
           )}
+        </div>
+      );
+
+      // Feud (Top Answers) — show question + answer board
+      if (q.type === "feud") return (
+        <div key={`q-${state.currentQuestion}`} className="animate-in" style={{ textAlign:"center", maxWidth:"1200px" }}>
+          <TypeBadge type={q.type} size="lg" extra={`• Q${state.currentQuestion+1}`} />
+          <div style={{ fontSize:"min(44px, 4.5vw)", fontWeight:700, lineHeight:1.3, marginTop:"28px", textShadow:"0 2px 30px #0008" }}>
+            {q.question}
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:"10px", marginTop:"36px", maxWidth:"700px", margin:"36px auto 0" }}>
+            {q.answers.map((a, i) => {
+              const revealed = (state.feudRevealed || []).includes(i);
+              return (
+                <div key={i} style={{
+                  display:"flex", alignItems:"center", gap:"12px", padding:"14px 20px", borderRadius:"12px",
+                  background: revealed ? "#fb923c18" : "#ffffff08",
+                  border: `2px solid ${revealed ? "#fb923c" : "#333"}`,
+                  transition:"all 0.4s ease",
+                }}>
+                  <div style={{ fontFamily:"'Bebas Neue'", fontSize:"36px", width:"40px", textAlign:"center",
+                    color: revealed ? "#fb923c" : "#444",
+                  }}>{i+1}</div>
+                  {revealed ? (
+                    <>
+                      <div className="animate-scale" style={{ flex:1, fontSize:"28px", fontWeight:700, textAlign:"left" }}>{a.text}</div>
+                      <div style={{ fontFamily:"'Bebas Neue'", fontSize:"36px", color:"#fb923c" }}>{a.points}</div>
+                    </>
+                  ) : (
+                    <div style={{ flex:1, fontSize:"28px", fontWeight:700, textAlign:"center", opacity:0.15, letterSpacing:"8px" }}>? ? ?</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ marginTop:"20px", fontSize:"22px", opacity:0.3 }}>
+            {(state.feudRevealed||[]).length} of {q.answers.length} revealed
+          </div>
+        </div>
+      );
+
+      // Audience Play — big question for the whole auditorium
+      if (q.type === "audience") return (
+        <div key={`q-${state.currentQuestion}`} className="animate-in" style={{ textAlign:"center", maxWidth:"1200px" }}>
+          <TypeBadge type={q.type} size="lg" extra={`• Q${state.currentQuestion+1}`} />
+          <div style={{ fontSize:"40px", marginTop:"24px", animation:"pulse 2s infinite" }}>🎤</div>
+          <div style={{ fontSize:"min(56px, 6vw)", fontWeight:700, lineHeight:1.3, marginTop:"20px", textShadow:"0 2px 30px #0008" }}>
+            {q.question}
+          </div>
+          <div style={{ marginTop:"32px", fontSize:"28px", opacity:0.4, fontWeight:300 }}>
+            Raise your hand if you know the answer!
+          </div>
+          {remaining > 0 && <TimerDisplay timerEnd={state.timerEnd} style={{ marginTop:"24px" }} />}
         </div>
       );
 
@@ -868,7 +960,7 @@ function AudienceView({ state }) {
 
     // Answer reveal
     if (phase === "answer") {
-      const answerText = q.type === "face_off" ? subQ?.answer : q.type === "minute_quiz" ? `${state.minuteQuizCorrect} correct out of ${state.minuteQuizIndex + 1}` : q.type === "order" ? null : q.type === "estimation" ? null : q.type === "this_or_that" ? null : q.answer;
+      const answerText = q.type === "face_off" ? subQ?.answer : q.type === "minute_quiz" ? `${state.minuteQuizCorrect} correct out of ${state.minuteQuizIndex + 1}` : q.type === "order" ? null : q.type === "estimation" ? null : q.type === "this_or_that" ? null : q.type === "feud" ? null : q.answer;
       const answerColor = q.type === "face_off" ? C.amber : C.green;
 
       // Estimation: compute winner
@@ -892,11 +984,34 @@ function AudienceView({ state }) {
       return (
         <div key={`a-${state.currentQuestion}-${state.faceOffIndex}`} className="animate-scale" style={{ textAlign:"center", maxWidth:"1200px" }}>
           <div style={{ fontSize:"28px", opacity:0.4, letterSpacing:"6px", fontWeight:600, marginBottom:"24px" }}>
-            {q.type === "minute_quiz" ? "TIME'S UP!" : q.type === "order" ? "THE CORRECT ORDER IS" : q.type === "estimation" ? "THE ANSWER IS..." : q.type === "this_or_that" ? "THE ANSWER IS..." : "THE ANSWER IS"}
+            {q.type === "minute_quiz" ? "TIME'S UP!" : q.type === "order" ? "THE CORRECT ORDER IS" : q.type === "estimation" ? "THE ANSWER IS..." : q.type === "this_or_that" ? "THE ANSWER IS..." : q.type === "feud" ? "THE FULL BOARD" : "THE ANSWER IS"}
           </div>
 
-          {/* This or That dramatic reveal */}
-          {q.type === "this_or_that" ? (
+          {/* Feud — reveal all answers */}
+          {q.type === "feud" ? (
+            <div style={{ maxWidth:"700px", margin:"0 auto", display:"flex", flexDirection:"column", gap:"10px" }}>
+              {q.answers.map((a, i) => {
+                const wasFound = (state.feudRevealed || []).includes(i);
+                return (
+                  <div key={i} className="animate-scale" style={{
+                    animation:`scaleReveal 0.4s ${i*0.12}s cubic-bezier(0.34, 1.56, 0.64, 1) both`,
+                    display:"flex", alignItems:"center", gap:"12px", padding:"12px 20px", borderRadius:"12px",
+                    background: wasFound ? "#fb923c18" : "#ffffff06",
+                    border: `2px solid ${wasFound ? "#fb923c" : "#555"}`,
+                    opacity: wasFound ? 1 : 0.5,
+                  }}>
+                    <div style={{ fontFamily:"'Bebas Neue'", fontSize:"32px", width:"36px", textAlign:"center", color: wasFound ? "#fb923c" : "#666" }}>{i+1}</div>
+                    <div style={{ flex:1, fontSize:"26px", fontWeight:700, textAlign:"left", textDecoration: wasFound ? "none" : "none" }}>{a.text}</div>
+                    <div style={{ fontFamily:"'Bebas Neue'", fontSize:"32px", color: wasFound ? "#fb923c" : "#666" }}>{a.points}</div>
+                    {wasFound && <span style={{ fontSize:"18px" }}>✓</span>}
+                  </div>
+                );
+              })}
+              <div style={{ marginTop:"12px", fontSize:"24px", opacity:0.5 }}>
+                {(state.feudRevealed||[]).length} of {q.answers.length} found — {q.answers.filter((_,i) => (state.feudRevealed||[]).includes(i)).reduce((s,a) => s+a.points, 0)} total points revealed
+              </div>
+            </div>
+          ) : q.type === "this_or_that" ? (
             <div>
               <div style={{ fontFamily:"'Bebas Neue'", fontSize:"min(90px, 10vw)", color:C.green, textShadow:`0 0 60px ${C.green}44`, marginBottom:"32px" }}>
                 {q.answer}
@@ -1187,6 +1302,73 @@ function HostView({ state }) {
   const currentQ = subQ?.question || q?.question || "";
   const currentA = subQ?.answer || q?.answer || "";
 
+  const getHostPrompt = () => {
+    if (!q) return null;
+    const prompts = {
+      regular: {
+        number: "Read the question aloud. Tap 'Show Question' to display it and start the timer.",
+        question: "Wait for a team to buzz in. If wrong, the other team can steal for double points.",
+        answer: "Announce the answer. Scorekeeper will award or deduct points.",
+      },
+      spelling: {
+        number: "Read the DEFINITION only — do NOT say the word. Tap 'Show Question' to display it.",
+        question: "Both teams are writing on their iPads. Wait for submissions or timer to end.",
+        answer: "Show the correct spelling. Scorekeeper checks handwritten answers.",
+      },
+      face_off: {
+        number: `This is a Face-Off: "${q.theme}". One player from each team comes forward.`,
+        question: "Text reveals word-by-word. Buzzers auto-unlock when done. First to buzz answers.",
+        answer: "Announce the answer. Tap 'Next Face-Off' for the next clue in the series.",
+      },
+      pop_up: {
+        number: "This is a Pop-Up question. You'll reveal clues one at a time.",
+        question: "Read the question. Tap reveal buttons (1, 2, 3...) to show clues. Both teams write on iPad.",
+        answer: "Show all answers. Scorekeeper checks iPad drawings and awards points.",
+      },
+      all_play: {
+        number: "Both teams play — everyone writes their answer on the iPad.",
+        question: "Read the question. Both teams are writing on iPads. Wait for submissions.",
+        answer: "Announce the answer. Scorekeeper checks both teams' handwritten answers.",
+      },
+      wager: {
+        number: "Teams are entering their wager amounts on iPad now. Wait for both to lock in.",
+        question: "Read the question. Teams are writing their answer on iPad. Wait for submissions.",
+        answer: "Announce the answer. Scorekeeper awards or deducts wager amounts.",
+      },
+      minute_quiz: {
+        number: "Select which team goes first. One team's captain answers rapid-fire for 60 seconds.",
+        question: "Read each question fast! Tap ✓ Correct or ✗ Skip. Timer is running!",
+        answer: "Time's up! Scorekeeper awards the points to the team.",
+      },
+      order: {
+        number: "Both teams will arrange items in order on their iPads.",
+        question: "Read the question. Teams are dragging items into order. Wait for submissions.",
+        answer: "Show the correct order. Scorekeeper checks and awards points.",
+      },
+      estimation: {
+        number: "Both teams will enter a number guess on their iPads.",
+        question: "Read the question. Teams are entering estimates. Wait for both to lock in.",
+        answer: "The closest team wins! Scorekeeper awards points.",
+      },
+      this_or_that: {
+        number: "Both teams pick A or B on their iPads. Quick decision!",
+        question: "Read the question and both options. Teams are picking now. Wait for locks.",
+        answer: "Reveal the answer! Right = +1, Wrong = −1. Scorekeeper handles scoring.",
+      },
+      feud: {
+        number: "This is Top Answers! Teams alternate guessing. You control the board.",
+        question: "Ask the question. Teams guess verbally — tap an answer to reveal it when guessed correctly. Award points to the team that found it.",
+        answer: "Show the full board. Any answers they missed are revealed now.",
+      },
+      audience: {
+        number: "The AUDIENCE plays this one! Get them excited!",
+        question: "Read the question to the whole room. Call on raised hands. If they're on Irving's side → Irving gets the point.",
+        answer: "Announce the answer. Scorekeeper awards the point.",
+      },
+    };
+    return prompts[q.type]?.[phase] || null;
+  };
+
   const ctrl = (label, bg, fn) => (
     <button onClick={fn} style={{ padding:"10px 20px", background:bg, color:"#fff", borderRadius:"8px", fontSize:"14px", fontWeight:700, flex:1 }}>{label}</button>
   );
@@ -1286,6 +1468,13 @@ function HostView({ state }) {
               </div>
             )}
 
+            {/* Host prompt — directions for the MC */}
+            {getHostPrompt() && (
+              <div style={{ padding:"10px 14px", background:"#38bdf811", border:"1px solid #38bdf833", borderRadius:"8px", fontSize:"13px", lineHeight:1.5, color:"#38bdf8" }}>
+                <span style={{ fontWeight:700, opacity:0.6 }}>🎤 MC: </span>{getHostPrompt()}
+              </div>
+            )}
+
             <div style={{ display:"flex", gap:"8px" }}>
               {phase === "number" && ctrl("Show Question →", "#6366f1", () => {
                 const tl = getTimeLimit(q);
@@ -1296,7 +1485,7 @@ function HostView({ state }) {
                 const next = state.currentQuestion + 1;
                 if (next >= QUESTIONS.length) updateGame({ gamePhase:"finished" });
                 else if (next === HALFTIME_AFTER && !state.halftimeDone) updateGame({ gamePhase:"halftime", halftimeDone:true });
-                else updateGame({ currentQuestion:next, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0, buzzerOpen:false, buzzerWinner:null, buzzerTimeIrving:0, buzzerTimeMarshall:0, teamAnswerIrving:"", teamAnswerMarshall:"", wagerLockedIrving:false, wagerLockedMarshall:false, estimateIrving:"", estimateMarshall:"", estimateLockedIrving:false, estimateLockedMarshall:false, wrongTeam:null, countdownValue:0 });
+                else updateGame({ currentQuestion:next, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0, buzzerOpen:false, buzzerWinner:null, buzzerTimeIrving:0, buzzerTimeMarshall:0, teamAnswerIrving:"", teamAnswerMarshall:"", wagerLockedIrving:false, wagerLockedMarshall:false, estimateIrving:"", estimateMarshall:"", estimateLockedIrving:false, estimateLockedMarshall:false, feudRevealed:[], wrongTeam:null, countdownValue:0 });
               })}
               {phase === "answer" && q.type === "face_off" && state.faceOffIndex < q.subQuestions.length-1 && (
                 ctrl(`Next Face-Off (${state.faceOffIndex+2}/${q.subQuestions.length})`, C.amber, () => updateGame({ faceOffIndex: state.faceOffIndex+1, questionPhase:"question", buzzerOpen:false, buzzerWinner:null, teamAnswerIrving:"", teamAnswerMarshall:"" }))
@@ -1326,6 +1515,37 @@ function HostView({ state }) {
               </div>
             )}
 
+            {/* Feud reveal controls — host reveals individual answers */}
+            {q.type === "feud" && phase === "question" && (
+              <div style={{ display:"flex", flexDirection:"column", gap:"6px" }}>
+                <span style={{ fontSize:"12px", opacity:0.4 }}>Reveal answers:</span>
+                {q.answers.map((a,i) => {
+                  const revealed = (state.feudRevealed||[]).includes(i);
+                  return (
+                    <button key={i} onClick={() => { if (!revealed) updateGame({ feudRevealed: [...(state.feudRevealed||[]), i] }); }} style={{
+                      padding:"8px 14px", borderRadius:"8px", fontSize:"13px", fontWeight:700, textAlign:"left",
+                      display:"flex", alignItems:"center", gap:"8px",
+                      background: revealed ? "#fb923c22" : "#222", color:"white",
+                      border: revealed ? "1px solid #fb923c" : "1px solid #333",
+                      opacity: revealed ? 0.5 : 1,
+                    }}>
+                      <span style={{ fontFamily:"'Bebas Neue'", fontSize:"18px", color:"#fb923c", width:"20px" }}>{i+1}</span>
+                      <span style={{ flex:1 }}>{a.text}</span>
+                      <span style={{ fontFamily:"'Bebas Neue'", fontSize:"16px", color:"#fb923c" }}>{a.points}pts</span>
+                      {revealed && <span>✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Audience play note */}
+            {q.type === "audience" && phase === "question" && (
+              <div style={{ textAlign:"center", padding:"8px", background:"#38bdf811", border:"1px solid #38bdf833", borderRadius:"8px" }}>
+                <div style={{ fontSize:"13px", opacity:0.6 }}>🎤 Call on audience members — award points to their team's side</div>
+              </div>
+            )}
+
             {/* Minute Quiz host controls */}
             {q.type === "minute_quiz" && phase === "question" && (
               <div style={{ display:"flex", gap:"8px" }}>
@@ -1351,7 +1571,7 @@ function HostView({ state }) {
             <div style={{ fontSize:"20px", opacity:0.5, marginTop:"8px", marginBottom:"20px" }}>{state.scores.irving} — {state.scores.marshall}</div>
             {ctrl("▶ Resume Second Half", C.green, () => {
               const next = HALFTIME_AFTER;
-              updateGame({ gamePhase:"playing", currentQuestion:next, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0, buzzerOpen:false, buzzerWinner:null, teamAnswerIrving:"", teamAnswerMarshall:"", wagerLockedIrving:false, wagerLockedMarshall:false, estimateIrving:"", estimateMarshall:"", estimateLockedIrving:false, estimateLockedMarshall:false, wrongTeam:null, countdownValue:0 });
+              updateGame({ gamePhase:"playing", currentQuestion:next, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0, buzzerOpen:false, buzzerWinner:null, teamAnswerIrving:"", teamAnswerMarshall:"", wagerLockedIrving:false, wagerLockedMarshall:false, estimateIrving:"", estimateMarshall:"", estimateLockedIrving:false, estimateLockedMarshall:false, feudRevealed:[], wrongTeam:null, countdownValue:0 });
             })}
           </div>
         )}
@@ -1786,7 +2006,7 @@ function ScorekeeperView({ state }) {
     const next = state.currentQuestion + 1;
     if (next >= QUESTIONS.length) updateGame({ gamePhase:"finished" });
     else if (next === HALFTIME_AFTER && !state.halftimeDone) updateGame({ gamePhase:"halftime", halftimeDone:true });
-    else updateGame({ currentQuestion:next, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0, buzzerOpen:false, buzzerWinner:null, buzzerTimeIrving:0, buzzerTimeMarshall:0, teamAnswerIrving:"", teamAnswerMarshall:"", wagerLockedIrving:false, wagerLockedMarshall:false, estimateIrving:"", estimateMarshall:"", estimateLockedIrving:false, estimateLockedMarshall:false, wrongTeam:null, countdownValue:0 });
+    else updateGame({ currentQuestion:next, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0, buzzerOpen:false, buzzerWinner:null, buzzerTimeIrving:0, buzzerTimeMarshall:0, teamAnswerIrving:"", teamAnswerMarshall:"", wagerLockedIrving:false, wagerLockedMarshall:false, estimateIrving:"", estimateMarshall:"", estimateLockedIrving:false, estimateLockedMarshall:false, feudRevealed:[], wrongTeam:null, countdownValue:0 });
   };
 
   const awardTeam = (team, pts) => {
@@ -1952,6 +2172,17 @@ function ScorekeeperView({ state }) {
                 {q.type === "pop_up" && (
                   <div style={{ fontSize:"11px", opacity:0.4 }}>Pop-up parts revealed: {state.popUpRevealed}/{q.parts.length} (host controls)</div>
                 )}
+                {/* Feud status — show which answers revealed */}
+                {q.type === "feud" && (
+                  <div style={{ fontSize:"11px", opacity:0.4 }}>
+                    Top Answers: {(state.feudRevealed||[]).length}/{q.answers.length} revealed (host controls) —
+                    {" "}{q.answers.filter((_,i) => (state.feudRevealed||[]).includes(i)).reduce((s,a) => s+a.points, 0)} pts found
+                  </div>
+                )}
+                {/* Audience status */}
+                {q.type === "audience" && (
+                  <div style={{ fontSize:"11px", opacity:0.4 }}>🎤 Audience play — award points to the team whose side answers correctly</div>
+                )}
 
                 {/* Award / Wrong buttons */}
                 <div style={{ fontSize:"10px", opacity:0.3, letterSpacing:"2px", fontWeight:600 }}>AWARD POINTS</div>
@@ -2115,7 +2346,7 @@ function ScorekeeperView({ state }) {
           <div style={{ fontSize:"10px", opacity:0.3, letterSpacing:"1px", marginBottom:"6px" }}>QUESTION LIST</div>
           <div style={{ maxHeight:"180px", overflow:"auto", display:"flex", flexDirection:"column", gap:"3px" }}>
             {QUESTIONS.map((qq, i) => (
-              <button key={qq.id} onClick={() => updateGame({ currentQuestion:i, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0, buzzerOpen:false, buzzerWinner:null, teamAnswerIrving:"", teamAnswerMarshall:"", wagerLockedIrving:false, wagerLockedMarshall:false, estimateIrving:"", estimateMarshall:"", estimateLockedIrving:false, estimateLockedMarshall:false, wrongTeam:null, countdownValue:0 })}
+              <button key={qq.id} onClick={() => updateGame({ currentQuestion:i, questionPhase:"number", timerEnd:0, timerPaused:0, faceOffIndex:0, minuteQuizIndex:0, minuteQuizCorrect:0, popUpRevealed:0, wagerIrving:0, wagerMarshall:0, buzzerOpen:false, buzzerWinner:null, teamAnswerIrving:"", teamAnswerMarshall:"", wagerLockedIrving:false, wagerLockedMarshall:false, estimateIrving:"", estimateMarshall:"", estimateLockedIrving:false, estimateLockedMarshall:false, feudRevealed:[], wrongTeam:null, countdownValue:0 })}
                 style={{
                   padding:"5px 8px", borderRadius:"6px", textAlign:"left", display:"flex", gap:"6px", alignItems:"center",
                   background: i===state.currentQuestion ? "#ffffff11" : "transparent",
